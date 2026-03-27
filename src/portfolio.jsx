@@ -836,6 +836,8 @@ function BioSection() {
 
           <Skills p={scrollP} />
 
+          <Contact p={scrollP} />
+
           {/* Dica visual indicando que requer rolagem do mouse */}
           <div style={{ position:"absolute", bottom:40, left:"50%", transform:"translateX(-50%)", display:"flex", flexDirection:"column", alignItems:"center", gap:8, opacity: Math.max(0, 0.4 - scrollP * 2), pointerEvents:"none", zIndex: 100 }}>
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", color:T.muted, textTransform:"uppercase" }}>
@@ -858,9 +860,11 @@ const SKILLS = [
 
 function Skills({ p }) {
   const isCin = p !== undefined;
-  // Surge da direita quando projetos estão indo para a esquerda (p - 0.78)
-  const enterT = isCin ? Math.max(0, Math.min((p - 0.78) / 0.15, 1)) : 1;
+  // Surge da direita quando projetos estão indo para a esquerda
+  const enterT = isCin ? Math.max(0, Math.min((p - 0.78) / 0.12, 1)) : 1;
+  const leaveT = isCin ? Math.max(0, Math.min((p - 0.90) / 0.10, 1)) : 0;
   const eIn = isCin ? (enterT * enterT * enterT) : 1;
+  const eOut = leaveT * leaveT * leaveT;
 
   const [lRef, lVisState] = useInView();
   const [rRef, rVisState] = useInView();
@@ -1023,34 +1027,38 @@ function Skills({ p }) {
   const content = (
     <section id="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? "0 48px" : "140px 48px", background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
       {/* Logos com física via ref (saem da animação CSS) */}
-      {LOGO_DEFS.map((logo, i) => (
-        <div
-          key={i}
-          ref={(el) => logosRef.current[i] = el}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: logo.size,
-            height: logo.size,
-            pointerEvents: "none",
-            zIndex: 1, // fica atrás do texto
-          }}
-        >
-          <img
-            src={logo.src}
-            alt=""
+      <div style={{ position: "absolute", inset: 0, opacity: Math.max(0, 1 - eOut), transform: `scale(${1 - eOut*0.3})`, pointerEvents: "none" }}>
+        {LOGO_DEFS.map((logo, i) => (
+          <div
+            key={i}
+            ref={(el) => logosRef.current[i] = el}
             style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              opacity: lVis ? 0.35 : 0,
-              transform: `scale(${lVis ? 1 : 0})`,
-              transition: `opacity 1.2s ${i * 0.08}s, transform 1.2s ${i * 0.08}s cubic-bezier(0.175, 0.885, 0.32, 1.275)`,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: logo.size,
+              height: logo.size,
+              pointerEvents: "none",
+              zIndex: 1, // fica atrás do texto
             }}
-          />
-        </div>
-      ))}        <div style={{ position: "relative", zIndex: 10, maxWidth:1060, width: "100%", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"start" }}>
+          >
+            <img
+              src={logo.src}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                opacity: lVis ? 0.35 : 0,
+                transform: `scale(${lVis ? 1 : 0})`,
+                transition: `opacity 1.2s ${i * 0.08}s, transform 1.2s ${i * 0.08}s cubic-bezier(0.175, 0.885, 0.32, 1.275)`,
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div style={{ position: "relative", zIndex: 10, maxWidth:1060, width: "100%", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"start" }}>
+        <div style={{ transform: `translate(${-eOut * 300}px, ${-eOut * 100}px) rotate(${-eOut * 15}deg)`, opacity: Math.max(0, 1 - eOut) }}>
           <div ref={lRef} style={{ opacity:lVis?1:0, transform:lVis?"translateX(0)":"translateX(-40px)", transition:"all .9s .1s cubic-bezier(.16,1,.3,1)" }}>
             <SecLabel num="04" label="Stack" />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,68px)", lineHeight:.9, color:T.white }}>
@@ -1063,6 +1071,8 @@ function Skills({ p }) {
               ))}
             </div>
           </div>
+        </div>
+        <div style={{ transform: `translate(${eOut * 300}px, ${eOut * 150}px) rotate(${eOut * 10}deg)`, opacity: Math.max(0, 1 - eOut) }}>
           <div ref={rRef} style={{ paddingTop:60 }}>
             {SKILLS.map((s,i)=>(
               <div key={i} style={{ marginBottom:28, opacity:rVis?1:0, transform:rVis?"translateX(0)":"translateX(32px)", transition:`all .75s ${.1+i*.1}s cubic-bezier(.16,1,.3,1)` }}>
@@ -1079,7 +1089,8 @@ function Skills({ p }) {
             ))}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
   );
 
   if (isCin) {
@@ -1099,8 +1110,15 @@ function Skills({ p }) {
 }
 
 /* ══ CONTATO ══════════════════════════════════════════════════ */
-function Contact() {
-  const [ref, vis] = useInView();
+function Contact({ p }) {
+  const isCin = p !== undefined;
+  // A seção contact entra de cima para baixo começando em p = 0.88, até 1.0.
+  const enterT = isCin ? Math.max(0, Math.min((p - 0.88) / 0.12, 1)) : 1;
+  const yOffset = isCin ? (1 - Math.pow(enterT, 3)) * -100 : 0; // Starts from -100vh down to 0, suavizado
+
+  const [ref, visState] = useInView();
+  const vis = isCin ? enterT > 0.1 : visState;
+  
   const [form, setForm]     = useState({ name:"", from:"", contact:"", msg:"" });
   const [topic, setTopic]   = useState(null);
   const [channel, setChannel] = useState(null);
@@ -1108,25 +1126,23 @@ function Contact() {
 
   const iStyle = { background:"none", border:"none", borderBottom:`1.5px solid ${T.border}`, color:T.goldL, fontFamily:"'Cormorant Garamond',serif", fontSize:"inherit", fontWeight:300, padding:"0 6px 2px", minWidth:110, transition:"border-color .3s", caretColor:T.gold, cursor:"none" };
 
-  return (
-    <>
-      <SDivider delay={.05} />
-      <section id="contato" ref={ref} style={{ padding:"120px 48px 100px", background:T.dark, minHeight:"80vh", display:"flex", alignItems:"center" }}>
-        <div style={{ maxWidth:960, width:"100%", margin:"0 auto" }}>
-          <SecLabel num="05" label="Contato" />
+  const content = (
+    <section id="contato" ref={ref} style={{ padding: isCin ? "60px 48px" : "120px 48px 100px", background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
+      <div style={{ maxWidth:960, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
+        <SecLabel num="05" label="Contato" />
 
-          {!sent ? (
-            <div style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
+        {!sent ? (
+          <div style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
 
-              <p className="cphr" style={{ marginBottom:36 }}>
+              <p className="cphr" style={{ marginBottom:28 }}>
                 <span style={{color:T.muted}}>Hey! My name is</span>
                 <input className="cfield" placeholder="seu nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,minWidth:160}} />
                 <span style={{color:T.muted}}>and I am from</span>
                 <input className="cfield" placeholder="cidade / país" value={form.from} onChange={e=>setForm({...form,from:e.target.value})} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,minWidth:140}} />
               </p>
 
-              <div style={{ marginBottom:36 }}>
-                <p className="cphr" style={{ marginBottom:14 }}>
+              <div style={{ marginBottom:28 }}>
+                <p className="cphr" style={{ marginBottom:12 }}>
                   <span style={{color:T.muted}}>Let's connect about</span>
                 </p>
                 <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
@@ -1136,8 +1152,8 @@ function Contact() {
                 </div>
               </div>
 
-              <div style={{ marginBottom:36 }}>
-                <p className="cphr" style={{ marginBottom:14 }}>
+              <div style={{ marginBottom:28 }}>
+                <p className="cphr" style={{ marginBottom:12 }}>
                   <span style={{color:T.muted}}>We can talk in more detail at</span>
                   <input className="cfield" placeholder="email ou @usuario" value={form.contact} onChange={e=>setForm({...form,contact:e.target.value})} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,minWidth:220}} />
                 </p>
@@ -1148,12 +1164,12 @@ function Contact() {
                 </div>
               </div>
 
-              <p className="cphr" style={{ marginBottom:56, alignItems:"flex-start" }}>
+              <p className="cphr" style={{ marginBottom:44, alignItems:"flex-start" }}>
                 <span style={{color:T.muted,paddingTop:4}}>In short,</span>
                 <textarea placeholder="sua mensagem aqui..." value={form.msg} onChange={e=>setForm({...form,msg:e.target.value})} rows={2} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,display:"block",resize:"none",flex:1,minWidth:280,lineHeight:1.6}} />
               </p>
 
-              <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:36, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:20 }}>
+              <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:28, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:20 }}>
                 <button className="sbtn" data-h onClick={()=>setSent(true)}>
                   Send a form <span className="sarr">↗</span>
                 </button>
@@ -1175,8 +1191,22 @@ function Contact() {
               </p>
             </div>
           )}
-        </div>
-      </section>
+      </div>
+    </section>
+  );
+
+  if (isCin) {
+    return (
+      <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100vh", zIndex: 50, pointerEvents: enterT > 0.5 ? "auto" : "none", transform: `translateY(${yOffset}vh)`, overflow: "hidden" }}>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <SDivider delay={.05} />
+      {content}
     </>
   );
 }
@@ -1223,10 +1253,6 @@ export default function Portfolio() {
         {/* BioSection: transição da esquerda para a direita */}
         <section style={{ animation: 'fromRight 0.7s cubic-bezier(.16,1,.3,1) both' }}>
           <BioSection />
-        </section>
-        {/* Demais seções: transição de baixo para cima */}
-        <section style={{ animation: 'fromDown 0.7s cubic-bezier(.16,1,.3,1) both' }}>
-          <Contact />
         </section>
       </main>
       <Footer />
