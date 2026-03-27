@@ -1118,79 +1118,58 @@ function Contact({ p }) {
 
   const [ref, visState] = useInView();
   const vis = isCin ? enterT > 0.1 : visState;
-  
-  const [form, setForm]     = useState({ name:"", from:"", contact:"", msg:"" });
-  const [topic, setTopic]   = useState(null);
-  const [channel, setChannel] = useState(null);
-  const [sent, setSent]     = useState(false);
 
-  const iStyle = { background:"none", border:"none", borderBottom:`1.5px solid ${T.border}`, color:T.goldL, fontFamily:"'Cormorant Garamond',serif", fontSize:"inherit", fontWeight:300, padding:"0 6px 2px", minWidth:110, transition:"border-color .3s", caretColor:T.gold, cursor:"none" };
+  const links = [
+    { label: "GitHub", url: "https://github.com/davizinhoow", desc: "Explore meus repositórios e open-source." },
+    { label: "LinkedIn", url: "https://www.linkedin.com/in/davi-freitas-789317352/", desc: "Conecte-se comigo profissionalmente." },
+    { label: "E-mail", url: "mailto:davizinho.f.freitas@gmail.com", desc: "Mande uma mensagem direta para mim." }
+  ];
 
   const content = (
     <section id="contato" ref={ref} style={{ padding: isCin ? "60px 48px" : "120px 48px 100px", background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
-      <div style={{ maxWidth:960, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
-        <SecLabel num="05" label="Contato" />
+      <div style={{ maxWidth:1060, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
+        <div style={{ textAlign: "center", marginBottom: 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
+          <SecLabel num="05" label="Contato" />
+          <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,68px)", lineHeight:.9, color:T.white, marginTop:24 }}>
+            VAMOS <span className="gold-text">CONVERSAR?</span>
+          </h2>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:20, color:T.muted, lineHeight:1.6, marginTop:24, maxWidth:500, margin:"24px auto 0" }}>
+            Estou sempre aberto a novas oportunidades, colaborações ou apenas para trocar uma ideia.
+          </p>
+        </div>
 
-        {!sent ? (
-          <div style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
-
-              <p className="cphr" style={{ marginBottom:28 }}>
-                <span style={{color:T.muted}}>Hey! My name is</span>
-                <input className="cfield" placeholder="seu nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,minWidth:160}} />
-                <span style={{color:T.muted}}>and I am from</span>
-                <input className="cfield" placeholder="cidade / país" value={form.from} onChange={e=>setForm({...form,from:e.target.value})} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,minWidth:140}} />
-              </p>
-
-              <div style={{ marginBottom:28 }}>
-                <p className="cphr" style={{ marginBottom:12 }}>
-                  <span style={{color:T.muted}}>Let's connect about</span>
-                </p>
-                <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                  {["Colaboração","Projeto","Networking"].map(t=>(
-                    <button key={t} data-h className={`tbtn${topic===t?" sel":""}`} onClick={()=>setTopic(topic===t?null:t)}>{t}</button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom:28 }}>
-                <p className="cphr" style={{ marginBottom:12 }}>
-                  <span style={{color:T.muted}}>We can talk in more detail at</span>
-                  <input className="cfield" placeholder="email ou @usuario" value={form.contact} onChange={e=>setForm({...form,contact:e.target.value})} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,minWidth:220}} />
-                </p>
-                <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                  {["WhatsApp / LinkedIn","Email"].map(c=>(
-                    <button key={c} data-h className={`cbtn${channel===c?" sel":""}`} onClick={()=>setChannel(channel===c?null:c)}>{c}</button>
-                  ))}
-                </div>
-              </div>
-
-              <p className="cphr" style={{ marginBottom:44, alignItems:"flex-start" }}>
-                <span style={{color:T.muted,paddingTop:4}}>In short,</span>
-                <textarea placeholder="sua mensagem aqui..." value={form.msg} onChange={e=>setForm({...form,msg:e.target.value})} rows={2} onFocus={e=>e.target.style.borderBottomColor=T.gold} onBlur={e=>e.target.style.borderBottomColor=T.border} style={{...iStyle,display:"block",resize:"none",flex:1,minWidth:280,lineHeight:1.6}} />
-              </p>
-
-              <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:28, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:20 }}>
-                <button className="sbtn" data-h onClick={()=>setSent(true)}>
-                  Send a form <span className="sarr">↗</span>
-                </button>
-                <div style={{ display:"flex", gap:24 }}>
-                  {["GitHub","LinkedIn","Email"].map(s=>(
-                    <a key={s} data-h href="#" style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", color:T.muted, transition:"color .3s" }}
-                      onMouseEnter={e=>e.currentTarget.style.color=T.gold} onMouseLeave={e=>e.currentTarget.style.color=T.muted}
-                    >{s}</a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign:"center", padding:"100px 40px", animation:"scaleIn .6s both" }}>
-              <Diamond size={24} style={{ margin:"0 auto 24px", animation:"float 3s ease-in-out infinite" }} />
-              <h2 className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(48px,8vw,96px)", letterSpacing:"0.04em", lineHeight:1 }}>DONE!</h2>
-              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:20, fontStyle:"italic", color:T.muted, marginTop:16 }}>
-                {form.name?`Obrigado, ${form.name}!`:"Obrigado!"} Entrarei em contato em breve.
-              </p>
-            </div>
-          )}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:24, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .4s cubic-bezier(.16,1,.3,1)" }}>
+          {links.map((link, i) => (
+            <a 
+              key={i} 
+              href={link.url} 
+              target="_blank" 
+              rel="noreferrer" 
+              data-h 
+              style={{
+                display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", padding:"48px 32px",
+                border:`1px solid ${T.border}`, background:T.card, textDecoration:"none", transition:"all .4s ease", cursor:"none", position:"relative", overflow:"hidden"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = T.gold;
+                e.currentTarget.style.transform = "translateY(-8px)";
+                e.currentTarget.style.boxShadow = `0 12px 32px -12px ${T.goldD}44`;
+                e.currentTarget.querySelector('.card-bg').style.opacity = 1;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = T.border;
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.querySelector('.card-bg').style.opacity = 0;
+              }}
+            >
+              <div className="card-bg" style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at top, ${T.goldD}15, transparent 70%)`, opacity:0, transition:"opacity .4s", pointerEvents:"none" }} />
+              <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:36, color:T.white, marginBottom:16, position:"relative" }}>{link.label}</h3>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:18, color:T.muted, position:"relative" }}>{link.desc}</p>
+              <div style={{ marginTop:24, color:T.gold, fontSize:20, position:"relative" }}>↗</div>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -1218,10 +1197,10 @@ function Footer() {
       <SDivider />
       <footer style={{ padding:"36px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:T.black, flexWrap:"wrap", gap:16 }}>
         <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:"0.12em" }}>
-          <span className="gold-text">DEV</span><span style={{color:T.muted}}>FOLIO</span>
+          <span className="gold-text">Davi</span><span style={{color:T.muted}}>freitas</span>
         </span>
         <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.25em", color:T.muted, textTransform:"uppercase" }}>
-          © {new Date().getFullYear()} · Seu Nome · Todos os direitos reservados
+          © {new Date().getFullYear()} · Davi Freitas · Todos os direitos reservados
         </span>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
           <Diamond size={5} />
