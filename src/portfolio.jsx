@@ -327,7 +327,7 @@ function Hero() {
     const onScroll = () => {
       const scrollY = window.scrollY;
       const vh = window.innerHeight;
-      let progress = scrollY / (vh * 1.5);
+      let progress = scrollY / (vh * 2.0); // Aumentou a área de interatividade do Hero
       if (progress < 0) progress = 0;
       if (progress > 1) progress = 1;
       target.p = progress;
@@ -347,7 +347,7 @@ function Hero() {
   });
 
   return (
-    <div id="hero" ref={ref} style={{ height: "250vh", position: "relative" }}>
+    <div id="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 100px", background: T.black }}>
         
         <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 150}px)` }} />
@@ -822,8 +822,8 @@ function BioSection() {
   return (
     <>
       <SDivider />
-      {/* 900vh vai dar uma área extra de rolagem para amarrarmos nossa animação de saída na esquerda e a entrada veloz das Skills */}
-      <div id="bio" ref={containerRef} style={{ height: "900vh", position: "relative" }}>
+      {/* 1500vh vai dar uma área extra de rolagem para amarrarmos nossa animação de saída na esquerda e a entrada veloz das Skills */}
+      <div id="bio" ref={containerRef} style={{ height: "1500vh", position: "relative" }}>
         
         {/* sticky amarra os conteudos na tela. T.black pro fundo padrão escuro da div */}
         <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: T.black }}>
@@ -862,9 +862,9 @@ function Skills({ p }) {
   const isCin = p !== undefined;
   // Surge da direita quando projetos estão indo para a esquerda
   const enterT = isCin ? Math.max(0, Math.min((p - 0.78) / 0.12, 1)) : 1;
-  const leaveT = isCin ? Math.max(0, Math.min((p - 0.90) / 0.10, 1)) : 0;
+  const leaveT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 0; // Voltado como estava antes!
   const eIn = isCin ? (enterT * enterT * enterT) : 1;
-  const eOut = leaveT * leaveT * leaveT;
+  const eOut = leaveT * leaveT * leaveT; // Aceleração na saída
 
   const [lRef, lVisState] = useInView();
   const [rRef, rVisState] = useInView();
@@ -1112,9 +1112,9 @@ function Skills({ p }) {
 /* ══ CONTATO ══════════════════════════════════════════════════ */
 function Contact({ p }) {
   const isCin = p !== undefined;
-  // A seção contact entra de cima para baixo começando em p = 0.88, até 1.0.
-  const enterT = isCin ? Math.max(0, Math.min((p - 0.88) / 0.12, 1)) : 1;
-  const yOffset = isCin ? (1 - Math.pow(enterT, 3)) * -100 : 0; // Starts from -100vh down to 0, suavizado
+  // A seção contact entra de cima para baixo
+  const enterT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 1;
+  const yOffset = isCin ? (1 - Math.pow(enterT, 3)) * -100 : 0; // Starts from -100vh down to 0, suavizado 
 
   const [ref, visState] = useInView();
   const vis = isCin ? enterT > 0.1 : visState;
