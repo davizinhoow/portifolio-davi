@@ -256,25 +256,40 @@ function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("hero");
   useEffect(() => {
-    const ids = ["hero","bio","projetos","skills","contato"];
     const fn = () => {
       setScrolled(window.scrollY > 60);
-      const y = window.scrollY + window.innerHeight / 3;
-      for (let i = ids.length - 1; i >= 0; i--) {
-        const el = document.getElementById(ids[i]);
-        if (el && el.offsetTop <= y) { setActive(ids[i]); break; }
+      const bio = document.getElementById("bio");
+      if (!bio) return;
+      
+      const sy = window.scrollY;
+      const bTop = bio.offsetTop;
+      const bH = bio.offsetHeight - window.innerHeight;
+      
+      if (sy < bTop - 100) setActive("hero");
+      else {
+        const p = (sy - bTop) / bH;
+        if (p > 0.85) setActive("contatos");
+        else if (p > 0.52) setActive("projetos");
+        else setActive("bio");
       }
     };
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const go = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const go = (id) => {
+    if (id === "contatos") {
+      const end = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+      window.scrollTo({ top: end, behavior: "smooth" });
+      return;
+    }
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const links = [
     { label:"Quem Sou", id:"bio" },
     { label:"Projetos",  id:"projetos" },
-    { label:"Contato",   id:"contato" },
+    { label:"Contato",   id:"contatos" },
   ];
 
   return (
@@ -289,7 +304,7 @@ function Nav() {
             <span style={{ position:"absolute", bottom:0, left:0, right:0, height:"1px", background:T.gold, transformOrigin:"left", transform:active===l.id?"scaleX(1)":"scaleX(0)", transition:"transform .4s cubic-bezier(.77,0,.18,1)" }} />
           </button>
         ))}
-        <button data-h onClick={() => go("contato")} style={{ background:"transparent", border:`1px solid ${T.gold}`, padding:"8px 20px", cursor:"none", fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.gold, transition:"all .3s" }}
+        <button data-h onClick={() => go("contatos")} style={{ background:"transparent", border:`1px solid ${T.gold}`, padding:"8px 20px", cursor:"none", fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.gold, transition:"all .3s" }}
           onMouseEnter={e => { e.currentTarget.style.background=T.gold; e.currentTarget.style.color=T.black; }}
           onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color=T.gold; }}
         >Hire Me</button>
@@ -396,8 +411,15 @@ function Hero() {
 
           <div style={{ transform: `translateY(${e * 250}px)`, opacity: Math.max(0, 1 - t*2) }}>
             <div style={{ display:"flex", gap:14, flexWrap:"wrap", opacity:vis?1:0, transition:"opacity .8s 1.25s" }}>
-              {[{l:"Ver Projetos",id:"projetos",p:true},{l:"Baixar CV",id:"contato",p:false}].map(b => (
-                <button key={b.l} data-h onClick={() => document.getElementById(b.id)?.scrollIntoView({behavior:"smooth"})}
+              {[{l:"Ver Projetos",id:"projetos",p:true},{l:"Baixar CV",id:"contatos",p:false}].map(b => (
+                <button key={b.l} data-h onClick={() => {
+                  if (b.id === "contatos") {
+                    const end = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+                    window.scrollTo({ top: end, behavior: "smooth" });
+                    return;
+                  }
+                  document.getElementById(b.id)?.scrollIntoView({ behavior: "smooth" });
+                }}
                   style={{ padding:"14px 36px", cursor:"none", background:"transparent", border:`1px solid ${b.p?T.gold:T.border}`, color:b.p?T.gold:T.muted, fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.25em", textTransform:"uppercase", transition:"all .35s" }}
                   onMouseEnter={e=>{ e.currentTarget.style.background=b.p?T.gold:T.border2; e.currentTarget.style.color=b.p?T.black:T.white; e.currentTarget.style.borderColor=b.p?T.gold:T.muted2; }}
                   onMouseLeave={e=>{ e.currentTarget.style.background="transparent"; e.currentTarget.style.color=b.p?T.gold:T.muted; e.currentTarget.style.borderColor=b.p?T.gold:T.border; }}
@@ -762,7 +784,7 @@ function PanelProjetos({ p }) {
       <div style={{ maxWidth:1200, width:"100%", margin:"auto" }}>
         
         {/* Título foge também pra esquerda na saída */}
-        <div id="projetos" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:60, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, 0) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
+        <div className="projetos-title" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:60, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, 0) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
           <div>
             <SecLabel num="03" label="Projetos" />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(48px,7vw,80px)", lineHeight:.9, color:T.white, transform:`translateY(${(1 - eIn) * 30}px)` }}>
@@ -825,6 +847,10 @@ function BioSection() {
       {/* 1500vh vai dar uma área extra de rolagem para amarrarmos nossa animação de saída na esquerda e a entrada veloz das Skills */}
       <div id="bio" ref={containerRef} style={{ height: "1500vh", position: "relative" }}>
         
+        {/* Dummy anchors for native internal link navigation within the sticky timeline */}
+        <div id="projetos" style={{ position: "absolute", top: "52%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="contatos" style={{ position: "absolute", top: "88%", width: "1px", height: "1px", pointerEvents: "none" }} />
+
         {/* sticky amarra os conteudos na tela. T.black pro fundo padrão escuro da div */}
         <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: T.black }}>
           
@@ -1126,7 +1152,7 @@ function Contact({ p }) {
   ];
 
   const content = (
-    <section id="contato" ref={ref} style={{ padding: isCin ? "60px 48px" : "120px 48px 100px", background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
+    <section id="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? "60px 48px" : "120px 48px 100px", background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
       <div style={{ maxWidth:1060, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
         <div style={{ textAlign: "center", marginBottom: 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
           <SecLabel num="05" label="Contato" />
