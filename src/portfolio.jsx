@@ -54,10 +54,11 @@ const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{background:${T.black};color:${T.white};font-family:'Cormorant Garamond',Georgia,serif;overflow-x:hidden;cursor:none;}
+html,body{scrollbar-width:none;}
 ::selection{background:${T.goldD}55;color:${T.goldL};}
-::-webkit-scrollbar{width:2px;}
-::-webkit-scrollbar-track{background:${T.black};}
-::-webkit-scrollbar-thumb{background:${T.goldD};}
+::-webkit-scrollbar{width:0;height:0;background:transparent;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:transparent;}
 a{color:inherit;text-decoration:none;cursor:none;}
 input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 
@@ -139,8 +140,107 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 .sbtn:hover .sarr{transform:rotate(45deg);background:${T.gold};border-color:${T.gold};color:${T.black};}
 `;
 
+/* ══ SMOOTH NAV GLOBAL ══════════════════════════════════════════════════ */
+// Mapeia os IDs de seção para o progresso virtual dentro do #bio (0 a 1)
+const SECTION_SCROLL_MAP = {
+  hero: 0,
+  bio: 0.0,
+  trajetoria: 0.28,
+  projetos: 0.55,
+  skills: 0.78,
+  contatos: 1.0,
+};
+
+// Easing solicitado: ease in/out cúbico.
+const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+// Guarda o requestAnimationFrame atual para cancelar animações antigas quando clicar várias vezes.
+let activeScrollRaf = null;
+
+/**
+ * scrollToSection: navegação interna suave e previsível para o layout sticky/virtual.
+ * @param {string} id - id da seção (chave do SECTION_SCROLL_MAP)
+ * @param {number} durationMs - duração da animação em ms (padrão 1200)
+ */
+function scrollToSection(id, durationMs = 1200) {
+  const startY = window.scrollY;
+  let targetY = startY;
+
+  if (id === "hero") {
+    targetY = 0;
+  } else if (Object.prototype.hasOwnProperty.call(SECTION_SCROLL_MAP, id)) {
+    const bio = document.getElementById("bio");
+    if (!bio) return;
+
+    const sectionProgress = SECTION_SCROLL_MAP[id];
+    const maxScroll = Math.max(0, bio.offsetHeight - window.innerHeight);
+    targetY = bio.offsetTop + maxScroll * sectionProgress;
+  } else {
+    // Fallback para IDs comuns fora do mapa virtual
+    const el = document.getElementById(id);
+    if (!el) return;
+    targetY = el.getBoundingClientRect().top + window.scrollY;
+  }
+
+  // Clampa no range real do documento
+  const docMax = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  targetY = Math.min(docMax, Math.max(0, targetY));
+
+  if (Math.abs(targetY - startY) < 1) return;
+
+  if (activeScrollRaf) {
+    cancelAnimationFrame(activeScrollRaf);
+    activeScrollRaf = null;
+  }
+
+  const startTime = performance.now();
+  const distance = targetY - startY;
+
+  const tick = (now) => {
+    const elapsed = now - startTime;
+    const t = Math.min(1, elapsed / durationMs);
+    const eased = easeInOutCubic(t);
+    const nextY = startY + distance * eased;
+
+    window.scrollTo(0, nextY);
+
+    if (t < 1) {
+      activeScrollRaf = requestAnimationFrame(tick);
+    } else {
+      activeScrollRaf = null;
+      window.scrollTo(0, targetY);
+    }
+  };
+
+  activeScrollRaf = requestAnimationFrame(tick);
+}
+
 /* ══ HOOKS Customizados ═══════════════════════════════════════════════════ */
 // Hooks são funções do React que começam com "use". Eles guardam lógicas que podemos reutilizar em várias partes do site.
+
+/**
+ * useSmoothNav: expõe scrollToSection e liga automaticamente elementos com [data-scroll-to].
+ */
+function useSmoothNav() {
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll("[data-scroll-to]"));
+
+    const onClick = (e) => {
+      e.preventDefault();
+      const id = e.currentTarget.getAttribute("data-scroll-to");
+      if (!id) return;
+      scrollToSection(id);
+    };
+
+    elements.forEach((el) => el.addEventListener("click", onClick));
+
+    return () => {
+      elements.forEach((el) => el.removeEventListener("click", onClick));
+    };
+  }, []);
+
+  return { scrollToSection };
+}
 
 /**
  * useInView: Olheiro de Tela
@@ -312,6 +412,7 @@ function GoldParticles({ active }) {
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("hero");
+  const { scrollToSection } = useSmoothNav();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -350,12 +451,7 @@ function Nav() {
   }, []);
 
   const go = (id) => {
-    if (id === "contatos") {
-      const end = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-      window.scrollTo({ top: end, behavior: "smooth" });
-      return;
-    }
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    scrollToSection(id);
   };
 
   const links = [
@@ -491,12 +587,7 @@ function Hero() {
             <div style={{ display:"flex", gap:14, flexWrap:"wrap", opacity:vis?1:0, transition:"opacity .8s 1.25s" }}>
               {[{l:"Ver Projetos",id:"projetos",p:true},{l:"Baixar CV",id:"contatos",p:false}].map(b => (
                 <button key={b.l} data-h onClick={() => {
-                  if (b.id === "contatos") {
-                    const end = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-                    window.scrollTo({ top: end, behavior: "smooth" });
-                    return;
-                  }
-                  document.getElementById(b.id)?.scrollIntoView({ behavior: "smooth" });
+                  scrollToSection(b.id);
                 }}
                   style={{ padding:"14px 36px", cursor:"none", background:"transparent", border:`1px solid ${b.p?T.gold:T.border}`, color:b.p?T.gold:T.muted, fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.25em", textTransform:"uppercase", transition:"all .35s" }}
                   onMouseEnter={e=>{ e.currentTarget.style.background=b.p?T.gold:T.border2; e.currentTarget.style.color=b.p?T.black:T.white; e.currentTarget.style.borderColor=b.p?T.gold:T.muted2; }}
@@ -914,7 +1005,7 @@ function PanelProjetos({ p }) {
 /**
  * Componente Principal: BioSection (Motor da Linha do Tempo)
  * O que faz: É o grande cérebro do portfolio que controla as animações como se fossem frames de um vídeo.
- * Como funciona para um leigo: Em vez de rolar as coisas par baixo de qualquer jeito, ele finge que o site tem 15.000 pixels de altura escondidos (1500vh).
+ * Como funciona para um leigo: Em vez de rolar as coisas par baixo de qualquer jeito, ele finge que o site tem 17.000 pixels de altura escondidos (1700vh).
  * Conforme você roda a rodinha do mouse para descer essa altura, ele NÃO desce a tela, mas sim calcula quantos % (scrollP) você desceu. 
  * E usa essa % para acionar como "play" as animações das telas filhas: "Quem Sou" some, "Trajetória" entra, etc.
  */
@@ -960,8 +1051,8 @@ function BioSection() {
   return (
     <>
       <SDivider />
-      {/* 1500vh vai dar uma área extra de rolagem para amarrarmos nossa animação de saída na esquerda e a entrada veloz das Skills */}
-      <div id="bio" ref={containerRef} style={{ height: "1500vh", position: "relative" }}>
+  {/* 1700vh aumenta a distância de rolagem e faz as transições acontecerem com um pouco mais de scroll */}
+  <div id="bio" ref={containerRef} style={{ height: "1700vh", position: "relative" }}>
         
         {/* Dummy anchors for native internal link navigation within the sticky timeline */}
   <div id="trajetoria" style={{ position: "absolute", top: "34%", width: "1px", height: "1px", pointerEvents: "none" }} />
