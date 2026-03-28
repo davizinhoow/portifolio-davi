@@ -255,26 +255,41 @@ function GoldParticles({ active }) {
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("hero");
+
   useEffect(() => {
-    const fn = () => {
+    const handleScroll = () => {
       setScrolled(window.scrollY > 60);
+      
       const bio = document.getElementById("bio");
       if (!bio) return;
-      
-      const sy = window.scrollY;
-      const bTop = bio.offsetTop;
+
+      const rect = bio.getBoundingClientRect();
       const bH = bio.offsetHeight - window.innerHeight;
-      
-      if (sy < bTop - 100) setActive("hero");
-      else {
-        const p = (sy - bTop) / bH;
-        if (p > 0.85) setActive("contatos");
-        else if (p > 0.52) setActive("projetos");
-        else setActive("bio");
+
+      // Se estamos acima da seção 'bio'
+      if (rect.top > window.innerHeight / 2) {
+        setActive("hero");
+        return;
       }
+
+      // Calcula o exato progresso da rolagem baseado no topo da Bio
+      let p = bH > 0 ? -rect.top / bH : 0;
+      if (p < 0) p = 0;
+      if (p > 1) p = 1;
+      
+      if (p < 0.20) setActive("bio");        // < 20% ainda em QUEM SOU
+      else if (p < 0.80) setActive("trajetoria"); // 20% a 80% em TRAJETORIA / PROJETOS
+      else setActive("contatos");            // > 80% CONTATO
     };
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    
+    // Roda uma vez pra garantir caso a tela já começe rolada
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const go = (id) => {
@@ -288,7 +303,7 @@ function Nav() {
 
   const links = [
     { label:"Quem Sou", id:"bio" },
-    { label:"Projetos",  id:"projetos" },
+    { label:"Trajetória",  id:"trajetoria" },
     { label:"Contato",   id:"contatos" },
   ];
 
@@ -848,8 +863,9 @@ function BioSection() {
       <div id="bio" ref={containerRef} style={{ height: "1500vh", position: "relative" }}>
         
         {/* Dummy anchors for native internal link navigation within the sticky timeline */}
-        <div id="projetos" style={{ position: "absolute", top: "52%", width: "1px", height: "1px", pointerEvents: "none" }} />
-  <div id="contatos" style={{ position: "absolute", top: "88%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="trajetoria" style={{ position: "absolute", top: "34%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="projetos" style={{ position: "absolute", top: "63%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="contatos" style={{ position: "absolute", top: "100%", width: "1px", height: "1px", pointerEvents: "none" }} />
 
         {/* sticky amarra os conteudos na tela. T.black pro fundo padrão escuro da div */}
         <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", background: T.black }}>
