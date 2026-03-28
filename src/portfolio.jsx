@@ -7,7 +7,8 @@ import fotoDavi5 from './assets/eu no santander.jpeg';
 import fotoDavi6 from './assets/eu i minha amadaa.jpeg';
 import videoDavi from './assets/eu em ilha bela.mp4';
 
-// Logos
+// Logos e Mídias
+// Isso importa as imagens e vídeos de dentro do sistema de pastas do React para usar no código.
 import logoAgno from './assets/logos/agno.png';
 import logoAws from './assets/logos/aws.png';
 import logoDatabase from './assets/logos/database.webp';
@@ -28,7 +29,8 @@ import logoFastApi from './assets/logos/fast api.png';
 import logoPostgress from './assets/logos/postgress.png';
 import logoSupabase from './assets/logos/supabase.webp';
 
-/* ══ FONTES ══════════════════════════════════════════════════ */
+/* ══ FONTES EXTERNAS ══════════════════════════════════════════════════ */
+// Puxa as fontes bonitas do Google Fonts direto para o documento
 const injectFonts = () => {
   if (document.getElementById("pf-fonts")) return;
   const l = document.createElement("link");
@@ -37,7 +39,8 @@ const injectFonts = () => {
   document.head.appendChild(l);
 };
 
-/* ══ TOKENS ══════════════════════════════════════════════════ */
+/* ══ TOKENS (Paleta de Cores) ══════════════════════════════════════════════════ */
+// Aqui ficam as cores padrão do site. Se quiser mudar o tom de dourado geral, é só mudar o hexadecimal do 'gold' aqui que propaga para o site todo.
 const T = {
   black:"#080808", dark:"#0d0d0d", card:"#111111",
   border:"#1c1c1c", border2:"#252525",
@@ -45,7 +48,8 @@ const T = {
   cream:"#f4ead5", muted:"#4a4a4a", muted2:"#666", white:"#f5f3ee",
 };
 
-/* ══ CSS ══════════════════════════════════════════════════════ */
+/* ══ CSS Global ══════════════════════════════════════════════════════ */
+// Um textão contendo todas as regras brutas de estilo (Keyframes de animação e classes padrão) que são injetadas direto na página.
 const CSS = `
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
@@ -135,7 +139,15 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 .sbtn:hover .sarr{transform:rotate(45deg);background:${T.gold};border-color:${T.gold};color:${T.black};}
 `;
 
-/* ══ HOOKS ═══════════════════════════════════════════════════ */
+/* ══ HOOKS Customizados ═══════════════════════════════════════════════════ */
+// Hooks são funções do React que começam com "use". Eles guardam lógicas que podemos reutilizar em várias partes do site.
+
+/**
+ * useInView: Olheiro de Tela
+ * O que faz: Avisa quando um elemento (como uma imagem ou texto) aparece na tela enquanto você rola para baixo.
+ * Uso prático: "Se essa div aparecer na tela, comece a animação X".
+ * @param {number} thresh - Porcentagem (0 a 1) do elemento que precisa estar visível para ativar.
+ */
 function useInView(thresh = 0.1) {
   const ref = useRef(null);
   const [v, setV] = useState(false);
@@ -150,6 +162,11 @@ function useInView(thresh = 0.1) {
   return [ref, v];
 }
 
+/**
+ * useParallax: Efeito de Profundidade
+ * O que faz: Faz um elemento se mover numa velocidade diferente da rolagem da página.
+ * Uso prático: Cria a ilusão de profundidade, como as montanhas que passam devagar atrás de uma janela de carro.
+ */
 function useParallax(speed = 0.2) {
   const ref = useRef(null);
   useEffect(() => {
@@ -161,6 +178,10 @@ function useParallax(speed = 0.2) {
   return ref;
 }
 
+/**
+ * useScrollProgress: Barra de Progresso Dourada
+ * O que faz: Mede o quanto você rolou a página até o fundo e empurra essa porcentagem para aquela linhazinha vertical no canto da tela.
+ */
 function useScrollProgress() {
   useEffect(() => {
     const bar = document.getElementById("progress-line");
@@ -174,6 +195,11 @@ function useScrollProgress() {
   }, []);
 }
 
+/**
+ * useCursor: O Mouse Mágico
+ * O que faz: Substitui o ponteiro do mouse feio do Windows por uma bolinha dourada com um anel flutuante que te segue.
+ * Quando você passa por cima de um botão, o anel incha (classList.add("big")).
+ */
 function useCursor() {
   useEffect(() => {
     const dot = document.getElementById("cur-dot");
@@ -184,15 +210,19 @@ function useCursor() {
       if (dot) { dot.style.left = dx + "px"; dot.style.top = dy + "px"; }
     };
     const lag = () => {
-      rx += (dx - rx) * .1; ry += (dy - ry) * .1;
+      rx += (dx - rx) * .1; ry += (dy - ry) * .1; // "rx += ..." Cria aquele efeito gomo elástico para seguir meio em atraso suave
       if (ring) { ring.style.left = rx + "px"; ring.style.top = ry + "px"; }
       af = requestAnimationFrame(lag);
     };
     const big = () => ring?.classList.add("big");
     const sm  = () => ring?.classList.remove("big");
     const clk = () => { ring?.classList.add("click"); setTimeout(() => ring?.classList.remove("click"), 200); };
+    
+    // Rastreadores de evento (Ouvidos da página pro mouse)
     window.addEventListener("mousemove", move);
     window.addEventListener("click", clk);
+    
+    // Toca tudo que for 'clicável' para o mouse inchar na hora que passa por cima
     document.querySelectorAll("a,button,[data-h]").forEach(el => {
       el.addEventListener("mouseenter", big);
       el.addEventListener("mouseleave", sm);
@@ -202,6 +232,10 @@ function useCursor() {
   }, []);
 }
 
+/**
+ * useCounter: Hodômetro Numérico
+ * O que faz: Conta números do 0 até o alvo rapidamente, num tempo 'ms' definido. Usado para o número "100" enorme atrás do início.
+ */
 function useCounter(target, active, ms = 1900) {
   const [v, setV] = useState(0);
   useEffect(() => {
@@ -219,19 +253,33 @@ function useCounter(target, active, ms = 1900) {
   return v;
 }
 
-/* ══ UTILITÁRIOS ══════════════════════════════════════════════ */
+/* ══ UTILITÁRIOS VISUAIS ══════════════════════════════════════════════ */
+// Componentes pequenos e sem estado que servem apenas para decoração.
+
+/**
+ * Componente: Diamond
+ * O que faz: Desenha aquele pequeno losango (ou diamante) dourado usado para decoração ao redor da página.
+ */
 const Diamond = ({ size = 8, color = T.gold, style = {} }) => (
   <svg width={size} height={size} viewBox="0 0 10 10" style={{ flexShrink: 0, ...style }}>
     <rect x="1.5" y="1.5" width="7" height="7" fill={color} transform="rotate(45 5 5)" />
   </svg>
 );
 
+/**
+ * Componente: SDivider (Divisor de Seção)
+ * O que faz: Desenha e anima a linha horizontal dourada e fina que aparece entre algumas áreas.
+ */
 const SDivider = ({ delay = 0 }) => (
   <div style={{ padding: "0 48px", overflow: "hidden" }}>
     <div className="sdiv" style={{ animationDelay: delay + "s" }} />
   </div>
 );
 
+/**
+ * Componente: SecLabel (Etiqueta de Seção)
+ * O que faz: Título pequeno formatado (Ex: "03 ---- PROJETOS") usado no topo das seções.
+ */
 const SecLabel = ({ num, label }) => (
   <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:36 }}>
     <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.4em", color:T.gold, textTransform:"uppercase" }}>{num}</span>
@@ -240,6 +288,10 @@ const SecLabel = ({ num, label }) => (
   </div>
 );
 
+/**
+ * Componente: GoldParticles
+ * O que faz: Gera bolinhas douradas animadas que sobem na tela, usadas como efeito de faísca visual.
+ */
 function GoldParticles({ active }) {
   if (!active) return null;
   return (
@@ -252,6 +304,11 @@ function GoldParticles({ active }) {
 }
 
 /* ══ NAV ══════════════════════════════════════════════════════ */
+/**
+ * Componente: Nav (Menu de Navegação Principal)
+ * O que faz: Fica sempre presa no topo (sticky). Rastreia o scroll para aplicar o fundo translúcido (efeito de vidro rolando para baixo) 
+ * e calcula milimetricamente em que parte do site matemático ("p") você está lendo para manter a palavra (Ex: Trajetória) sublinhada em ouro.
+ */
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("hero");
@@ -329,6 +386,12 @@ function Nav() {
 }
 
 /* ══ HERO ═════════════════════════════════════════════════════ */
+/**
+ * Componente: Hero (Apresentação Inicial)
+ * O que faz: É aquela primeira tela enorme de entrada quando o site carrega.
+ * Nela estão os títulos gigantes, seu nome, a contagem do "100" que sobe rapidinho e as partículas de luxo.
+ * Ela vai sumindo devagarinho pra cima quando você rola o botão.
+ */
 function Hero() {
   const [ref, vis] = useInView(0.01);
   const count = useCounter(100, vis, 2200);
@@ -461,7 +524,10 @@ function Hero() {
 
 /* ══ SOBRE (painel esquerdo do slider) ════════════════════════ */
 
-/* MetricCard é componente separado — NUNCA coloque useState dentro de .map() */
+/**
+ * Componente: MetricCard (Cardzinho de Métrica)
+ * O que faz: Aqueles quadradinhos de status que mostram números. (Ex: "3 - Trabalhos"). Brilham quando você passa o mouse.
+ */
 function MetricCard({ v, l, last }) {
   const [hov, setHov] = useState(false);
   return (
@@ -474,6 +540,12 @@ function MetricCard({ v, l, last }) {
   );
 }
 
+/**
+ * Componente: PanelSobre (Sua biografia visual)
+ * O que faz: É a primeira parada do seu "túnel" de scroll. Aqui ficam as suas fotos e vídeos rodando em loop do lado esquerdo, e o texto de "Quem Sou eu" no lado direito,
+ * Ele some flutuando suavemente pra cima/esquerda pra dar lugar a seção da "Carreira".
+ * @param {number} p - O pulso de rolagem (de 0 a 1) passado pelo motorzão do "BioSection".
+ */
 function PanelSobre({ p }) {
   const imgRef = useParallax(0.08);
   const mediaItems = [
@@ -652,7 +724,13 @@ const CAREER = [
   {year:"2025",role:"Estagiário em Tecnologia",company:"UNIANCHIETA",type:"Estágio",desc:"Início da trajetória profissional unindo desenvolvimento web e automação de processos. Bases sólidas de engenharia e banco de dados.",tags:["SQL Server","PHP","Integrações", "JavaScript"]},
 ];
 
-/* CareerItem é componente separado — nunca use useState dentro de .map() */
+/**
+ * Componente: CareerItem (Item da Carreira)
+ * O que faz: Desenha e anima cada "degrau" da sua experiência de trabalho (Estágios, empresas, etc.).
+ * @param {object} item - Os dados do trabalho (ano, descrição).
+ * @param {number} animP - Animação de Entrada.
+ * @param {number} leaveP - Animação de Saída.
+ */
 function CareerItem({ item, index, animP, leaveP = 0 }) {
   const [hov, setHov] = useState(false);
   
@@ -697,6 +775,12 @@ function CareerItem({ item, index, animP, leaveP = 0 }) {
   );
 }
 
+/**
+ * Componente: PanelCarreira (Painel Trajetória Profissional)
+ * O que faz: É o painel escuro no centro que desce sobre o "Sobre" com a lista do seu histórico de trabalho.
+ * Ele surge depois que o scroll passa de ~18% e foge pra esquerda nos 45%.
+ * @param {number} p - O pulso de rolagem vindo do "BioSection".
+ */
 function PanelCarreira({ p }) {
   // Começa a entrar depois que o scroll passa de 0.18
   const enterT = Math.max(0, Math.min((p - 0.18) / 0.15, 1));
@@ -733,6 +817,7 @@ function PanelCarreira({ p }) {
 }
 
 /* ══ PROJETOS ════════════════════════════════════════════════ */
+// Array com os dados dos seus trabalhos. Cada item vai virar um ProjectCard.
 const PROJECTS = [
   {num:"001",title:"E-Commerce Platform",category:"Full Stack",year:"2024",desc:"Plataforma completa com checkout customizado, painel admin e integrações com múltiplos gateways.",tags:["Next.js","Stripe","PostgreSQL","Redis"],large:true},
   {num:"002",title:"SaaS Dashboard",      category:"Frontend",  year:"2024",desc:"Analytics com visualizações complexas e controle granular de permissões.",tags:["React","D3.js","Node.js"],large:false},
@@ -740,6 +825,10 @@ const PROJECTS = [
   {num:"004",title:"Mobile App",          category:"Mobile",    year:"2023",desc:"App cross-platform com sincronização offline e autenticação biométrica.",tags:["React Native","Firebase","TypeScript"],large:true},
 ];
 
+/**
+ * Componente: ProjectCard (Caixa de Projeto)
+ * O que faz: É a caixinha individual brilhosa de cada projeto no portfolio. Ele tem uma matemática específica para "voar" e sumir dependendo se é par ou ímpar.
+ */
 function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
   const [hov, setHov] = useState(false);
   
@@ -785,6 +874,11 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
   );
 }
 
+/**
+ * Componente: PanelProjetos (Galeria de Trabalhos)
+ * O que faz: É a listagem de cards dos seus trabalhos. Ela brota feito um círculo crescendo do centro quando o scroll chega nos ~52%.
+ * @param {number} p - Progresso da página ('porcentagem' do scroll que define o andamento das animações).
+ */
 function PanelProjetos({ p }) {
   // Surge a partir do scroll 0.52
   const enterT = Math.max(0, Math.min((p - 0.52) / 0.15, 1));
@@ -816,7 +910,14 @@ function PanelProjetos({ p }) {
   );
 }
 
-/* ══ SLIDER HORIZONTAL SOBRE + CARREIRA + PROJETOS ════════════ */
+/* ══ GESTOR DE ROLETAGEM: BIOSECTION ═════════════════════════════════════════════ */
+/**
+ * Componente Principal: BioSection (Motor da Linha do Tempo)
+ * O que faz: É o grande cérebro do portfolio que controla as animações como se fossem frames de um vídeo.
+ * Como funciona para um leigo: Em vez de rolar as coisas par baixo de qualquer jeito, ele finge que o site tem 15.000 pixels de altura escondidos (1500vh).
+ * Conforme você roda a rodinha do mouse para descer essa altura, ele NÃO desce a tela, mas sim calcula quantos % (scrollP) você desceu. 
+ * E usa essa % para acionar como "play" as animações das telas filhas: "Quem Sou" some, "Trajetória" entra, etc.
+ */
 function BioSection() {
   const [scrollP, setScrollP] = useState(0);
   const targetP = useRef(0);
@@ -893,13 +994,20 @@ function BioSection() {
   );
 }
 
-/* ══ SKILLS ══════════════════════════════════════════════════ */
+/* ══ SKILLS (Conhecimentos) ══════════════════════════════════════════════════ */
+// Arrays puramente com números falsos ou verdadeiros sobre suas barras de xp.
 const SKILLS = [
   {n:"N8N / AI Agents",p:97},{n:"React / Next.js",p:83},
   {n:"Python",p:89},{n:"SQL Server",p:72},
   {n:"Docker / AWS",p:70},
 ];
 
+/**
+ * Componente: Skills (Suas Habilidades)
+ * O que faz: É a tela que mostra tanto as barrinhas douradas enchendo do seu nível de conforto, 
+ * quanto as "bolhas" (logotipos) das linguagens flutuando igual em gravidade zero.
+ * Ela entra pela direita quando a seção Projetos corre para a esquerda.
+ */
 function Skills({ p }) {
   const isCin = p !== undefined;
   // Surge da direita quando projetos estão indo para a esquerda
@@ -1151,7 +1259,12 @@ function Skills({ p }) {
   );
 }
 
-/* ══ CONTATO ══════════════════════════════════════════════════ */
+/* ══ CONTATO E FINAL ══════════════════════════════════════════════════ */
+/**
+ * Componente: Contact (Fale Comigo)
+ * O que faz: É a última tela, o formulário virtual onde ficam os links para o seu GitHub, e-mail e LinkedIn.
+ * Esta tela "desce do teto" (yOffset negativo vindo para o 0) quando o scroll geral passa dos 85%.
+ */
 function Contact({ p }) {
   const isCin = p !== undefined;
   // A seção contact entra de cima para baixo
@@ -1232,7 +1345,10 @@ function Contact({ p }) {
   );
 }
 
-/* ══ FOOTER ══════════════════════════════════════════════════ */
+/**
+ * Componente: Footer (Rodapé)
+ * O que faz: Simples sub-seção final no fundo da página que contém direitos autorais.
+ */
 function Footer() {
   return (
     <>
@@ -1253,9 +1369,18 @@ function Footer() {
   );
 }
 
-/* ══ APP ══════════════════════════════════════════════════════ */
+/* ══ APLICATIVO PRINCIPAL ══════════════════════════════════════════════════════ */
+/**
+ * Componente: Managers (Gestores Invisíveis)
+ * O que faz: Ele roda aquelas funções "mágicas" do cursor customizado e da barra de rolagem lá em cima em silêncio.
+ */
 function Managers() { useCursor(); useScrollProgress(); return null; }
 
+/**
+ * COMPONENTE RAIZ: Portfolio (O Ponto de Encontro)
+ * O que faz: É aqui que todas as peças de lego se juntam. Ele põe o CSS no documento, chama o cursor mágico (Managers),
+ * espeta o Menu de navegação no topo, coloca a página do "Hero" e engata o motor principal "BioSection" que rola o resto.
+ */
 export default function Portfolio() {
   useEffect(() => { injectFonts(); }, []);
   return (
