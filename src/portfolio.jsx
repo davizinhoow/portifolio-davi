@@ -140,15 +140,26 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 .sbtn:hover .sarr{transform:rotate(45deg);background:${T.gold};border-color:${T.gold};color:${T.black};}
 `;
 
-/* ══ SMOOTH NAV GLOBAL ══════════════════════════════════════════════════ */
-// Mapeia os IDs de seção para o progresso virtual dentro do #bio (0 a 1)
+/* ══ SMOOTH NAV GLOBAL & TIMELINE DO SCROLL ══════════════════════════════ */
+/**
+ * DOCUMENTAÇÃO DE NAVEGAÇÃO E ANIMAÇÃO:
+ * O portfólio utiliza um sistema de scroll "virtual" guiado pela rolagem do mouse.
+ * A página real ("#bio") possui uma altura absoluta massiva (ex: 2040vh) para forçar uma longa rolagem.
+ * A métrica \`p\` (Math.min(..., 1)) reflete a porcentagem exata de descida entre 0.0 e 1.0 (0 a 100%).
+ * 
+ * Cada componente abaixo é ativado por \`enterT\` e \`leaveT\`, calculados subtraindo o ponto inicial de \`p\`
+ * divididos pela duração que devem ficar visíveis.
+ * 
+ * O \`SECTION_SCROLL_MAP\` abaixo define o gatilho dos botões de navegação lateral (ancoragem), indicando em qual porcentagem
+ * da barra de rolagem a tela será tele-transportada ao serem clicados.
+ */
 const SECTION_SCROLL_MAP = {
-  hero: 0,
-  bio: 0.0,
-  trajetoria: 0.28,
-  projetos: 0.55,
-  skills: 0.78,
-  contatos: 1.0,
+  hero: 0,         // Voltar ao topo
+  bio: 0.0,        // Seção biográfica (início virtual do timeline)
+  trajetoria: 0.30,// Histórico e Carreira
+  projetos: 0.55,  // Cards dos Projetos
+  skills: 0.80,    // Habilidades Stack
+  contatos: 1.0,   // Rodapé de Contato
 };
 
 // Easing solicitado: ease in/out cúbico.
@@ -162,7 +173,7 @@ let activeScrollRaf = null;
  * @param {string} id - id da seção (chave do SECTION_SCROLL_MAP)
  * @param {number} durationMs - duração da animação em ms (padrão 1200)
  */
-function scrollToSection(id, durationMs = 1200) {
+function scrollToSection(id, durationMs = 3500) {
   const startY = window.scrollY;
   let targetY = startY;
 
@@ -435,9 +446,9 @@ function Nav() {
       if (p < 0) p = 0;
       if (p > 1) p = 1;
       
-      if (p < 0.20) setActive("bio");        // < 20% ainda em QUEM SOU
-      else if (p < 0.80) setActive("trajetoria"); // 20% a 80% em TRAJETORIA / PROJETOS
-      else setActive("contatos");            // > 80% CONTATO
+      if (p < 0.15) setActive("bio");        
+      else if (p < 0.90) setActive("trajetoria"); 
+      else setActive("contatos");            
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -678,9 +689,9 @@ function PanelSobre({ p }) {
     };
   }, [mediaItems.length]);
 
-  const t = Math.min(p / 0.2, 1);
+  const t = Math.max(0, Math.min((p - 0.10) / 0.15, 1));
   const e = t * t;
-  const isGone = p > 0.25;
+  const isGone = p > 0.30;
 
   return (
     <div style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding:"100px 40px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
@@ -868,15 +879,15 @@ function CareerItem({ item, index, animP, leaveP = 0 }) {
 
 /**
  * Componente: PanelCarreira (Painel Trajetória Profissional)
- * O que faz: É o painel escuro no centro que desce sobre o "Sobre" com a lista do seu histórico de trabalho.
- * Ele surge depois que o scroll passa de ~18% e foge pra esquerda nos 45%.
- * @param {number} p - O pulso de rolagem vindo do "BioSection".
+ * O que faz: É o painel escuro no centro que desce sobre o "Sobre" com a lista do histórico de trabalho.
+ * @param {number} p - O pulso progressivo geral (0 a 1) vindo do contêiner mestre BioSection.
  */
 function PanelCarreira({ p }) {
-  // Começa a entrar depois que o scroll passa de 0.18
-  const enterT = Math.max(0, Math.min((p - 0.18) / 0.15, 1));
-  // Começa a sair ao passar de 0.45
-  const leaveT = Math.max(0, Math.min((p - 0.45) / 0.15, 1));
+  // LÓGICA DE TEMPO:
+  // Math.max e Math.min confinam os valores sempre em escalas seguras de 0 a 1.
+  // (p - X) descobre quanto já desceu além do marco X. (/ Y) define a lentidão deste processo.
+  const enterT = Math.max(0, Math.min((p - 0.10) / 0.15, 1)); // Animação Iniciada: Scroll a >= 10%. Duração: 15%.
+  const leaveT = Math.max(0, Math.min((p - 0.35) / 0.15, 1)); // Animação Saindo: Scroll a >= 35%. Duração: 15%.
   
   const eIn = enterT * enterT; 
   const eOut = leaveT * leaveT * leaveT; // Curva suavizada
@@ -971,10 +982,9 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
  * @param {number} p - Progresso da página ('porcentagem' do scroll que define o andamento das animações).
  */
 function PanelProjetos({ p }) {
-  // Surge a partir do scroll 0.52
-  const enterT = Math.max(0, Math.min((p - 0.52) / 0.15, 1));
-  // Começa a sair (ir embora pra esquerda) no final do container
-  const leaveT = Math.max(0, Math.min((p - 0.75) / 0.15, 1));
+  // LÓGICA DE TEMPO IDÊNTICA
+  const enterT = Math.max(0, Math.min((p - 0.35) / 0.15, 1)); // Animação Iniciada: Scroll a >= 35%. Duração: 15%.
+  const leaveT = Math.max(0, Math.min((p - 0.60) / 0.15, 1)); // Animação Saindo: Scroll a >= 60%. Duração: 15%.
 
   const eIn = enterT * enterT * enterT; 
   const eOut = leaveT * leaveT * leaveT; // Curva bezier para animar saída mais dramática
@@ -1051,12 +1061,13 @@ function BioSection() {
   return (
     <>
       <SDivider />
-  {/* 1700vh aumenta a distância de rolagem e faz as transições acontecerem com um pouco mais de scroll */}
-  <div id="bio" ref={containerRef} style={{ height: "1700vh", position: "relative" }}>
+  {/* CONFIGURAÇÃO DE ROLAMENTO: 2500vh aumenta a distância de transição */}
+  <div id="bio" ref={containerRef} style={{ height: "2500vh", position: "relative" }}>
         
-        {/* Dummy anchors for native internal link navigation within the sticky timeline */}
-  <div id="trajetoria" style={{ position: "absolute", top: "34%", width: "1px", height: "1px", pointerEvents: "none" }} />
-  <div id="projetos" style={{ position: "absolute", top: "63%", width: "1px", height: "1px", pointerEvents: "none" }} />
+        {/* ANCORAS NATIVAS ALINHADAS AO SECTION_SCROLL_MAP */}
+  <div id="trajetoria" style={{ position: "absolute", top: "30%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="projetos" style={{ position: "absolute", top: "55%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="skills" style={{ position: "absolute", top: "80%", width: "1px", height: "1px", pointerEvents: "none" }} />
   <div id="contatos" style={{ position: "absolute", top: "100%", width: "1px", height: "1px", pointerEvents: "none" }} />
 
         {/* sticky amarra os conteudos na tela. T.black pro fundo padrão escuro da div */}
@@ -1101,9 +1112,9 @@ const SKILLS = [
  */
 function Skills({ p }) {
   const isCin = p !== undefined;
-  // Surge da direita quando projetos estão indo para a esquerda
-  const enterT = isCin ? Math.max(0, Math.min((p - 0.78) / 0.12, 1)) : 1;
-  const leaveT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 0; // Voltado como estava antes!
+  // LÓGICA DE TEMPO IDÊNTICA
+  const enterT = isCin ? Math.max(0, Math.min((p - 0.60) / 0.15, 1)) : 1; // Animação Iniciada: Scroll a >= 60%. Duração: 15%.
+  const leaveT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 0; // Animação Saindo: Scroll a >= 85%. Duração: 15%.
   const eIn = isCin ? (enterT * enterT * enterT) : 1;
   const eOut = leaveT * leaveT * leaveT; // Aceleração na saída
 
@@ -1358,8 +1369,8 @@ function Skills({ p }) {
  */
 function Contact({ p }) {
   const isCin = p !== undefined;
-  // A seção contact entra de cima para baixo
-  const enterT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 1;
+  // LÓGICA DE TEMPO IDÊNTICA
+  const enterT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 1; // Animação Iniciada: Scroll a >= 85%. Duração: 15%.
   const yOffset = isCin ? (1 - Math.pow(enterT, 3)) * -100 : 0; // Starts from -100vh down to 0, suavizado 
 
   const [ref, visState] = useInView();
