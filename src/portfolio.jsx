@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import fotoDavi1 from './assets/eu.jpeg'; 
-import fotoDavi2 from './assets/eu e ela meu amor.jpeg';
-import fotoDavi3 from './assets/davi-de-pollo.jpeg';
-import fotoDavi4 from './assets/eu de goblin.jpeg';
-import fotoDavi5 from './assets/eu no santander.jpeg';
-import fotoDavi6 from './assets/eu i minha amadaa.jpeg';
-import videoDavi from './assets/eu em ilha bela.mp4';
+import fotoDavi1 from './assets/quem-sou/eu.jpeg'; 
+import fotoDavi2 from './assets/quem-sou/eu e ela meu amor.jpeg';
+import fotoDavi3 from './assets/quem-sou/davi-de-pollo.jpeg';
+import fotoDavi4 from './assets/quem-sou/eu de goblin.jpeg';
+import fotoDavi5 from './assets/quem-sou/eu no santander.jpeg';
+import fotoDavi6 from './assets/quem-sou/eu i minha amadaa.jpeg';
+import videoDavi from './assets/quem-sou/eu em ilha bela.mp4';
 
 // Logos e Mídias
 // Isso importa as imagens e vídeos de dentro do sistema de pastas do React para usar no código.
@@ -921,10 +921,10 @@ function PanelCarreira({ p }) {
 /* ══ PROJETOS ════════════════════════════════════════════════ */
 // Array com os dados dos seus trabalhos. Cada item vai virar um ProjectCard.
 const PROJECTS = [
-  {num:"001",title:"E-Commerce Platform",category:"Full Stack",year:"2024",desc:"Plataforma completa com checkout customizado, painel admin e integrações com múltiplos gateways.",tags:["Next.js","Stripe","PostgreSQL","Redis"],large:true},
-  {num:"002",title:"SaaS Dashboard",      category:"Frontend",  year:"2024",desc:"Analytics com visualizações complexas e controle granular de permissões.",tags:["React","D3.js","Node.js"],large:false},
-  {num:"003",title:"API Gateway",         category:"Backend",   year:"2023",desc:"Microsserviços com JWT, rate limiting, circuit breaker e observabilidade.",tags:["Express","Redis","Docker","Prometheus"],large:false},
-  {num:"004",title:"Mobile App",          category:"Mobile",    year:"2023",desc:"App cross-platform com sincronização offline e autenticação biométrica.",tags:["React Native","Firebase","TypeScript"],large:true},
+  {num:"001",title:"Automated Landing Page Generation System",category:"FullStack",year:"2026",desc:"Uma plataforma desenvolvida para usuários sem conhecimento em programação, permitindo a criação de landing pages de alta qualidade e otimizadas para excelente desempenho em SEO.",tags:["N8N","React","Next.Js","Gemini"],large:true, link:"#"},
+  {num:"002",title:"Automatic Prediction of Academic Dropout",      category:"BackEnd",  year:"2025",desc:"Developed to predict student dropout rates at an educational institution, using advanced machine learning models",tags:["Python","Pandas","Numpy"],large:false, link:"https://github.com/davizinhoow/MachineLearning-Evasao-Alunos"},
+  {num:"003",title:"Document processing system with AI",         category:"Backend",   year:"2025/2026",desc:"Multi Agentes de IA para diversos serviços, focados principalmente no institucional.",tags:["Python","JavaScript","SQL Server","Flask"],large:false, link:"https://github.com/davizinhoow/IntegracoesIA"},
+  {num:"004",title:"Snitap Patins",          category:"FrontEnd",    year:"2025",desc:"Projeto simplesm, feito para treinar animações CSS, na trilha Full Stack Rocketseat",tags:["HTML","CSS"],large:true, link:"https://github.com/davizinhoow/Projeto-Animado"},
 ];
 
 /**
@@ -949,7 +949,10 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
   const transform = `translate(${outX}px, ${inY + outY}px) rotate(${rotate}deg)`;
 
   return (
-    <div data-h onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+    <div data-h 
+      onMouseEnter={()=>setHov(true)} 
+      onMouseLeave={()=>setHov(false)}
+      onClick={() => { if(p.link && p.link !== "#") window.open(p.link, "_blank"); }}
       style={{ gridColumn:p.large?"span 2":"span 1", padding:p.large?"52px":"40px", border:`1px solid ${hov?T.gold:T.border}`, background:hov?`${T.goldD}0e`:T.card, cursor:"none", position:"relative", overflow:"hidden", transition:"border-color .4s,background .4s", opacity, transform }}>
       <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg,transparent,${hov?T.gold:T.goldD}55,transparent)`, transformOrigin:"left", transform:hov?"scaleX(1)":"scaleX(.3)", transition:"transform .55s" }} />
       <div style={{ position:"absolute", inset:0, opacity:hov?1:0, background:`radial-gradient(ellipse 60% 60% at 25% 40%,${T.goldD}10,transparent)`, transition:"opacity .6s", pointerEvents:"none" }} />
@@ -1099,9 +1102,9 @@ function BioSection() {
 /* ══ SKILLS (Conhecimentos) ══════════════════════════════════════════════════ */
 // Arrays puramente com números falsos ou verdadeiros sobre suas barras de xp.
 const SKILLS = [
-  {n:"N8N / AI Agents",p:97},{n:"React / Next.js",p:83},
-  {n:"Python",p:89},{n:"SQL Server",p:72},
-  {n:"Docker / AWS",p:70},
+  {n:"N8N / AI Agents",p:88},{n:"React / Next.js",p:53},
+  {n:"Python",p:76},{n:"SQL Server",p:64},
+  {n:"Docker / AWS",p:41},
 ];
 
 /**
