@@ -157,7 +157,7 @@ const SECTION_SCROLL_MAP = {
   hero: 0,         // Voltar ao topo
   bio: 0.0,        // Seção biográfica (início virtual do timeline)
   trajetoria: 0.30,// Histórico e Carreira
-  projetos: 0.55,  // Cards dos Projetos
+  projetos: 0.61,  // Cards dos Projetos
   skills: 0.80,    // Habilidades Stack
   contatos: 1.0,   // Rodapé de Contato
 };
@@ -173,7 +173,7 @@ let activeScrollRaf = null;
  * @param {string} id - id da seção (chave do SECTION_SCROLL_MAP)
  * @param {number} durationMs - duração da animação em ms (padrão 1200)
  */
-function scrollToSection(id, durationMs = 3500) {
+function scrollToSection(id, durationMs = 1200) {
   const startY = window.scrollY;
   let targetY = startY;
 
@@ -483,10 +483,6 @@ function Nav() {
             <span style={{ position:"absolute", bottom:0, left:0, right:0, height:"1px", background:T.gold, transformOrigin:"left", transform:active===l.id?"scaleX(1)":"scaleX(0)", transition:"transform .4s cubic-bezier(.77,0,.18,1)" }} />
           </button>
         ))}
-        <button data-h onClick={() => go("contatos")} style={{ background:"transparent", border:`1px solid ${T.gold}`, padding:"8px 20px", cursor:"none", fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", textTransform:"uppercase", color:T.gold, transition:"all .3s" }}
-          onMouseEnter={e => { e.currentTarget.style.background=T.gold; e.currentTarget.style.color=T.black; }}
-          onMouseLeave={e => { e.currentTarget.style.background="transparent"; e.currentTarget.style.color=T.gold; }}
-        >Hire Me</button>
       </div>
     </nav>
   );
@@ -1069,7 +1065,7 @@ function BioSection() {
         
         {/* ANCORAS NATIVAS ALINHADAS AO SECTION_SCROLL_MAP */}
   <div id="trajetoria" style={{ position: "absolute", top: "30%", width: "1px", height: "1px", pointerEvents: "none" }} />
-  <div id="projetos" style={{ position: "absolute", top: "55%", width: "1px", height: "1px", pointerEvents: "none" }} />
+  <div id="projetos" style={{ position: "absolute", top: "58%", width: "1px", height: "1px", pointerEvents: "none" }} />
   <div id="skills" style={{ position: "absolute", top: "80%", width: "1px", height: "1px", pointerEvents: "none" }} />
   <div id="contatos" style={{ position: "absolute", top: "100%", width: "1px", height: "1px", pointerEvents: "none" }} />
 
