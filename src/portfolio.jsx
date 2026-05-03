@@ -546,26 +546,26 @@ function Hero() {
     <div id="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 100px", background: T.black }}>
         
-        <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 150}px)` }} />
+        <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)` }} />
         <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 52% 62% at ${mp.x*100}% ${mp.y*100}%,${T.goldD}26 0%,transparent 65%)`, transition:"background .7s ease", pointerEvents:"none", opacity: Math.max(0, 1 - t*2) }} />
 
         {/* número decorativo */}
-        <div style={{ position:"absolute", right:-20, top:"50%", transform: `translate(${e*500}px, ${-e*300}px) rotate(${e*30}deg)`, opacity: Math.max(0, 1 - t*1.5), zIndex: 0 }}>
+        <div style={{ position:"absolute", right:-20, top:"50%", transform: `translate(${e*1500}px, ${-e*800}px) rotate(${e*45}deg)`, opacity: Math.max(0, 1 - t*1.5), zIndex: 0 }}>
           <div style={{ ...mag(1,.5,10), fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(180px,32vw,400px)", lineHeight:1, color:T.border, userSelect:"none", pointerEvents:"none", letterSpacing:"-0.04em", opacity:vis?1:0, transition:"opacity 1.1s .3s, transform .9s cubic-bezier(.16,1,.3,1)" }}>
             {String(count).padStart(3,"0")}
           </div>
         </div>
 
-        <div style={{ position:"absolute", top:"22%", right:"28%", transform: `translate(${-e*300}px, ${-e*400}px)`, opacity: Math.max(0, .5 - t) }}>
+        <div style={{ position:"absolute", top:"22%", right:"28%", transform: `translate(${-e*1200}px, ${-e*900}px)`, opacity: Math.max(0, .5 - t) }}>
           <Diamond size={6} color={T.goldD} style={{ animation:"float 4.2s ease-in-out infinite" }} />
         </div>
-        <div style={{ position:"absolute", top:"64%", right:"19%", transform: `translate(${e*400}px, ${e*300}px)`, opacity: Math.max(0, .35 - t) }}>
+        <div style={{ position:"absolute", top:"64%", right:"19%", transform: `translate(${e*1400}px, ${e*800}px)`, opacity: Math.max(0, .35 - t) }}>
           <Diamond size={4} color={T.goldD} style={{ animation:"float 5.5s ease-in-out infinite .9s" }} />
         </div>
 
         <div style={{ position:"relative", maxWidth:960, zIndex: 10, pointerEvents: t > 0.5 ? "none" : "auto" }}>
           
-          <div style={{ transform: `translate(${-e * 200}px, ${-e * 200}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
+          <div style={{ transform: `translate(${-e * 1000}px, ${-e * 400}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
             <div style={{ display:"inline-flex", alignItems:"center", gap:12, border:`1px solid ${T.border}`, padding:"8px 18px", marginBottom:36, background:`${T.goldXD}28`, opacity:vis?1:0, transition:"opacity .6s .15s" }}>
               <span style={{ width:6, height:6, borderRadius:"50%", background:T.gold, animation:"goldPulse 2.2s infinite" }} />
               <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.4em", color:T.gold, textTransform:"uppercase" }}>AI & Full Stack Developer</span>
@@ -575,7 +575,7 @@ function Hero() {
           <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(72px,13vw,156px)", lineHeight:.88, letterSpacing:"0.02em" }}>
             {[{t:"INTELLIGENT",g:false,d:".28s"},{t:"SYSTEMS",g:true,d:".48s"},{t:"ENGINEERING",g:false,d:".68s"}].map(({t,g,d}, i) => (
               <div key={t} style={{ overflow:"hidden" }}>
-                <div style={{ transform: `translate(${-e * (200 + i*100)}px, ${-e * (50 + i*50)}px) rotate(${-e * (i * 2)}deg)`, opacity: Math.max(0, 1 - t*1.2) }}>
+                <div style={{ transform: `translate(${-e * (1200 + i*400)}px, ${-e * (200 + i*150)}px) rotate(${-e * (i * 3)}deg)`, opacity: Math.max(0, 1 - t*1.2) }}>
                   <div style={{ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(80px)", transition:`opacity .85s ${d} cubic-bezier(.16,1,.3,1),transform .85s ${d} cubic-bezier(.16,1,.3,1)` }}>
                     {g ? <span className="gold-text">{t}</span> : <span style={{color:T.white}}>{t}</span>}
                   </div>
@@ -584,29 +584,15 @@ function Hero() {
             ))}
           </h1>
 
-          <div style={{ transform: `translate(${e * 300}px, ${e * 150}px)`, opacity: Math.max(0, 1 - t*1.5) }}>
+          <div style={{ transform: `translate(${e * 1200}px, ${e * 300}px)`, opacity: Math.max(0, 1 - t*1.5) }}>
             <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"clamp(17px,2vw,22px)", fontWeight:300, fontStyle:"italic", color:T.cream, lineHeight:1.8, maxWidth:500, marginTop:36, marginBottom:52, opacity:vis?1:0, transition:"opacity .8s 1.05s" }}>
               Desenvolvedor Full Stack especializado em Inteligência Artificial. Construo soluções inovadoras utilizando Machine Learning, IAs Generativas e sistemas automatizados focados em resolver problemas reais.
             </p>
           </div>
-
-          <div style={{ transform: `translateY(${e * 250}px)`, opacity: Math.max(0, 1 - t*2) }}>
-            <div style={{ display:"flex", gap:14, flexWrap:"wrap", opacity:vis?1:0, transition:"opacity .8s 1.25s" }}>
-              {[{l:"Ver Projetos",id:"projetos",p:true},{l:"Baixar CV",id:"contatos",p:false}].map(b => (
-                <button key={b.l} data-h onClick={() => {
-                  scrollToSection(b.id);
-                }}
-                  style={{ padding:"14px 36px", cursor:"none", background:"transparent", border:`1px solid ${b.p?T.gold:T.border}`, color:b.p?T.gold:T.muted, fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.25em", textTransform:"uppercase", transition:"all .35s" }}
-                  onMouseEnter={e=>{ e.currentTarget.style.background=b.p?T.gold:T.border2; e.currentTarget.style.color=b.p?T.black:T.white; e.currentTarget.style.borderColor=b.p?T.gold:T.muted2; }}
-                  onMouseLeave={e=>{ e.currentTarget.style.background="transparent"; e.currentTarget.style.color=b.p?T.gold:T.muted; e.currentTarget.style.borderColor=b.p?T.gold:T.border; }}
-                >{b.l}</button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* ticker */}
-        <div style={{ position:"absolute", bottom:0, left:0, right:0, borderTop:`1px solid ${T.border}`, overflow:"hidden", background:`${T.dark}cc`, padding:"11px 0", transform: `translateY(${e * 150}px)`, opacity: Math.max(0, 1 - t*2) }}>
+        <div style={{ position:"absolute", bottom:0, left:0, right:0, borderTop:`1px solid ${T.border}`, overflow:"hidden", background:`${T.dark}cc`, padding:"11px 0", transform: `translateY(${e * 500}px)`, opacity: Math.max(0, 1 - t*2) }}>
           <div style={{ display:"flex", animation:"ticker 36s linear infinite", width:"max-content" }}>
             {Array(2).fill(["Python","TensorFlow","Pandas","PyTorch","Random Forest","OpenAI","RAG","React","Node.js","N8N","SQL Server","LLMs","Machine Learning","Generative AI","Docker","AWS","PostgreSQL"]).flat().map((t,i)=>(
               <span key={i} style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.28em", textTransform:"uppercase", color:(t === "N8N" || (i%5===0 && t !== "Node.js" && t !== "SQL Server")) ? T.gold : T.muted, padding:"0 24px" }}>
