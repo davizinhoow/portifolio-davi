@@ -155,11 +155,11 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
  */
 const SECTION_SCROLL_MAP = {
   hero: 0,         // Voltar ao topo
-  bio: 0.0,        // Seção biográfica (início virtual do timeline)
-  trajetoria: 0.30,// Histórico e Carreira
+  bio: 0.15,        // Quem Sou (Exatamente na foto 1)
+  trajetoria: 0.39,// Trajetória (Exatamente na foto 2)
   projetos: 0.61,  // Cards dos Projetos
   skills: 0.80,    // Habilidades Stack
-  contatos: 1.0,   // Rodapé de Contato
+  contatos: 1.3,   // Rodapé de Contato (Exatamente na foto 3)
 };
 
 // Easing solicitado: ease in/out cúbico.
@@ -173,7 +173,7 @@ let activeScrollRaf = null;
  * @param {string} id - id da seção (chave do SECTION_SCROLL_MAP)
  * @param {number} durationMs - duração da animação em ms (padrão 1200)
  */
-function scrollToSection(id, durationMs = 1200) {
+function scrollToSection(id, durationMs = 600) {
   const startY = window.scrollY;
   let targetY = startY;
 
