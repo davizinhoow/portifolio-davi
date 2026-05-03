@@ -917,7 +917,7 @@ function PanelCarreira({ p }) {
 /* ══ PROJETOS ════════════════════════════════════════════════ */
 // Array com os dados dos seus trabalhos. Cada item vai virar um ProjectCard.
 const PROJECTS = [
-  {num:"001",title:"Automated Landing Page Generation System",category:"FullStack",year:"2026",desc:"Uma plataforma desenvolvida para usuários sem conhecimento em programação, permitindo a criação de landing pages de alta qualidade e otimizadas para excelente desempenho em SEO.",tags:["N8N","React","Next.Js","Gemini"],large:true, link:"#"},
+  {num:"001",title:"Automated Landing Page Generation System",category:"FullStack",year:"2026",desc:"Uma plataforma desenvolvida para usuários sem conhecimento em programação, permitindo a criação de landing pages de alta qualidade e otimizadas para excelente desempenho em SEO.",tags:["N8N","React","Next.Js","Gemini"],large:true, link:"https://github.com/davizinhoow/Automated-LP-creation-with-deployment"},
   {num:"002",title:"Automatic Prediction of Academic Dropout",      category:"BackEnd",  year:"2025",desc:"Developed to predict student dropout rates at an educational institution, using advanced machine learning models",tags:["Python","Pandas","Numpy"],large:false, link:"https://github.com/davizinhoow/MachineLearning-Evasao-Alunos"},
   {num:"003",title:"Document processing system with AI",         category:"Backend",   year:"2025/2026",desc:"Multi Agentes de IA para diversos serviços, focados principalmente no institucional.",tags:["Python","JavaScript","SQL Server","Flask"],large:false, link:"https://github.com/davizinhoow/IntegracoesIA"},
   {num:"004",title:"Snitap Patins",          category:"FrontEnd",    year:"2025",desc:"Projeto simplesm, feito para treinar animações CSS, na trilha Full Stack Rocketseat",tags:["HTML","CSS"],large:true, link:"https://github.com/davizinhoow/Projeto-Animado"},
@@ -1098,9 +1098,9 @@ function BioSection() {
 /* ══ SKILLS (Conhecimentos) ══════════════════════════════════════════════════ */
 // Arrays puramente com números falsos ou verdadeiros sobre suas barras de xp.
 const SKILLS = [
-  {n:"N8N / AI Agents",p:88},{n:"React / Next.js",p:53},
-  {n:"Python",p:76},{n:"SQL Server",p:64},
-  {n:"Docker / AWS",p:41},
+  {n:"N8N / AI Agents",p:88},{n:"React / Next.js",p:47},
+  {n:"Python",p:68},{n:"SQL",p:52},
+  {n:"Docker / AWS",p:21},
 ];
 
 /**
