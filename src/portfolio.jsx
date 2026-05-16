@@ -306,6 +306,16 @@ function useScrollProgress() {
   }, []);
 }
 
+function useNotebook() {
+  const [nb, setNb] = useState(() => window.innerWidth <= 1440);
+  useEffect(() => {
+    const fn = () => setNb(window.innerWidth <= 1440);
+    window.addEventListener('resize', fn, { passive: true });
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return nb;
+}
+
 /**
  * useCursor: O Mouse Mágico
  * O que faz: Substitui o ponteiro do mouse feio do Windows por uma bolinha dourada com um anel flutuante que te segue.
@@ -424,6 +434,7 @@ function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("hero");
   const { scrollToSection } = useSmoothNav();
+  const nb = useNotebook();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -472,11 +483,11 @@ function Nav() {
   ];
 
   return (
-    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding:"16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:scrolled?`${T.dark}f2`:"transparent", backdropFilter:scrolled?"blur(20px)":"none", borderBottom:`1px solid ${scrolled?T.border:"transparent"}`, transition:"all .5s" }}>
+    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding: nb ? "14px 28px" : "16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:scrolled?`${T.dark}f2`:"transparent", backdropFilter:scrolled?"blur(20px)":"none", borderBottom:`1px solid ${scrolled?T.border:"transparent"}`, transition:"all .5s" }}>
       <button data-h onClick={() => go("hero")} style={{ background:"none", border:"none", cursor:"none", fontFamily:"'Bebas Neue',sans-serif", fontSize:20, letterSpacing:"0.15em" }}>
         <span className="gold-text">Davi</span><span style={{ color:T.white }}>Freitas</span>
       </button>
-      <div style={{ display:"flex", gap:40, alignItems:"center" }}>
+      <div style={{ display:"flex", gap: nb ? 24 : 40, alignItems:"center" }}>
         {links.map(l => (
           <button key={l.id} data-h onClick={() => go(l.id)} style={{ background:"none", border:"none", cursor:"none", fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.25em", textTransform:"uppercase", color:active===l.id?T.gold:T.muted, transition:"color .3s", position:"relative", padding:"4px 0" }}>
             {l.label}
@@ -500,6 +511,7 @@ function Hero() {
   const count = useCounter(100, vis, 2200);
   const [mp, setMp] = useState({ x: 0.5, y: 0.5 });
   const [p, setP] = useState(0);
+  const nb = useNotebook();
 
   useEffect(() => {
     const fn = (e) => setMp({ x: e.clientX/window.innerWidth, y: e.clientY/window.innerHeight });
@@ -544,7 +556,7 @@ function Hero() {
 
   return (
     <div id="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
-      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: "120px 48px 100px", background: T.black }}>
+      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
         
         <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)` }} />
         <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 52% 62% at ${mp.x*100}% ${mp.y*100}%,${T.goldD}26 0%,transparent 65%)`, transition:"background .7s ease", pointerEvents:"none", opacity: Math.max(0, 1 - t*2) }} />
@@ -631,6 +643,7 @@ function MetricCard({ v, l, last }) {
  * @param {number} p - O pulso de rolagem (de 0 a 1) passado pelo motorzão do "BioSection".
  */
 function PanelSobre({ p }) {
+  const nb = useNotebook();
   const imgRef = useParallax(0.08);
   const mediaItems = [
     { src: fotoDavi1, type: 'image' },
@@ -676,8 +689,8 @@ function PanelSobre({ p }) {
   const isGone = p > 0.30;
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding:"100px 40px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1.15fr", gap:120, alignItems:"center", maxWidth:1440, width:"100%", margin:"auto" }}>
+    <div style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1.15fr", gap: nb ? 64 : 120, alignItems:"center", maxWidth:1440, width:"100%", margin:"auto" }}>
 
         {/* foto: voa pra esquerda e pra baixo fugindo e rotacionando */}
         <div style={{ transform: `translate(${-e * 400}px, ${e * 200}px) rotate(${-e * 10}deg) scale(${1 - e * 0.1})`, opacity: Math.max(0, 1 - t*1.5) }}>
@@ -690,7 +703,7 @@ function PanelSobre({ p }) {
                 
                 <div 
                   ref={containerRef}
-                  style={{ width:480, height:480, position:'relative', marginBottom:36, zIndex: 2 }}
+                  style={{ width: nb ? 340 : 480, height: nb ? 340 : 480, position:'relative', marginBottom:36, zIndex: 2 }}
                 >
                   {mediaItems.map((media, i) => {
                     const dist = i - currentPhoto;
@@ -700,7 +713,7 @@ function PanelSobre({ p }) {
                       normDist = dist > 0 ? dist - mediaItems.length : dist + mediaItems.length;
                     }
 
-                    let offset = normDist * 280; // Quanto desliza pro lado
+                    let offset = normDist * (nb ? 200 : 280); // Quanto desliza pro lado
                     let sc = 1 - Math.abs(normDist) * 0.25; // cria profundidade encolhendo os lados
                     let op = 1 - Math.abs(normDist) * 0.7; // opacidade para clarear os lados
                     let zi = 10 - Math.abs(normDist);
@@ -764,7 +777,7 @@ function PanelSobre({ p }) {
                   </div>
                 </div>
 
-                <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:104, lineHeight:1, letterSpacing:".08em" }}>Davi Freitas</span>
+                <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 76 : 104, lineHeight:1, letterSpacing:".08em" }}>Davi Freitas</span>
                 <span style={{ fontFamily:"'DM Mono',monospace", fontSize:12, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>davizinhoow</span>
               </div>
               {[{top:14,left:14},{top:14,right:14},{bottom:14,left:14},{bottom:14,right:14}].map((s,i)=>(
@@ -865,6 +878,7 @@ function CareerItem({ item, index, animP, leaveP = 0 }) {
  * @param {number} p - O pulso progressivo geral (0 a 1) vindo do contêiner mestre BioSection.
  */
 function PanelCarreira({ p }) {
+  const nb = useNotebook();
   // LÓGICA DE TEMPO:
   // Math.max e Math.min confinam os valores sempre em escalas seguras de 0 a 1.
   // (p - X) descobre quanto já desceu além do marco X. (/ Y) define a lentidão deste processo.
@@ -875,7 +889,7 @@ function PanelCarreira({ p }) {
   const eOut = leaveT * leaveT * leaveT; // Curva suavizada
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.dark, display:"flex", alignItems:"center", justifyContent:"center", padding:"100px 40px", pointerEvents: enterT > 0 && leaveT < 1 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 50%)`, zIndex: 20 }}>
+    <div style={{ position: "absolute", inset: 0, background: T.dark, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: enterT > 0 && leaveT < 1 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 50%)`, zIndex: 20 }}>
       {/* Se quiser permitir scroll interno desse box enquanto rola a página não rola, mas em tela cheia cabe assim. O wrap tem auto. */}
       <div style={{ maxWidth:860, width:"100%", margin:"auto" }}>
         
@@ -967,6 +981,7 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
  * @param {number} p - Progresso da página ('porcentagem' do scroll que define o andamento das animações).
  */
 function PanelProjetos({ p }) {
+  const nb = useNotebook();
   // LÓGICA DE TEMPO IDÊNTICA
   const enterT = Math.max(0, Math.min((p - 0.35) / 0.15, 1)); // Animação Iniciada: Scroll a >= 35%. Duração: 15%.
   const leaveT = Math.max(0, Math.min((p - 0.60) / 0.15, 1)); // Animação Saindo: Scroll a >= 60%. Duração: 15%.
@@ -975,7 +990,7 @@ function PanelProjetos({ p }) {
   const eOut = leaveT * leaveT * leaveT; // Curva bezier para animar saída mais dramática
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.black, padding:"100px 48px", overflowY: "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 100%)`, zIndex: 30, display:"flex", alignItems:"center" }}>
+    <div style={{ position: "absolute", inset: 0, background: T.black, padding: nb ? "60px 32px" : "100px 48px", overflowY: "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 100%)`, zIndex: 30, display:"flex", alignItems:"center" }}>
       <div style={{ maxWidth:1200, width:"100%", margin:"auto" }}>
         
         {/* Título foge também pra esquerda na saída */}
@@ -1096,6 +1111,7 @@ const SKILLS = [
  * Ela entra pela direita quando a seção Projetos corre para a esquerda.
  */
 function Skills({ p }) {
+  const nb = useNotebook();
   const isCin = p !== undefined;
   // LÓGICA DE TEMPO IDÊNTICA
   const enterT = isCin ? Math.max(0, Math.min((p - 0.60) / 0.15, 1)) : 1; // Animação Iniciada: Scroll a >= 60%. Duração: 15%.
@@ -1262,7 +1278,7 @@ function Skills({ p }) {
   }, [lVis]);
 
   const content = (
-    <section id="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? "0 48px" : "140px 48px", background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
+    <section id="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? (nb ? "0 28px" : "0 48px") : (nb ? "100px 32px" : "140px 48px"), background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
       {/* Logos com física via ref (saem da animação CSS) */}
       <div style={{ position: "absolute", inset: 0, opacity: Math.max(0, 1 - eOut), transform: `scale(${1 - eOut*0.3})`, pointerEvents: "none" }}>
         {LOGO_DEFS.map((logo, i) => (
@@ -1294,7 +1310,7 @@ function Skills({ p }) {
           </div>
         ))}
       </div>
-      <div style={{ position: "relative", zIndex: 10, maxWidth:1060, width: "100%", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"start" }}>
+      <div style={{ position: "relative", zIndex: 10, maxWidth:1060, width: "100%", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap: nb ? 44 : 80, alignItems:"start" }}>
         <div style={{ transform: `translate(${-eOut * 300}px, ${-eOut * 100}px) rotate(${-eOut * 15}deg)`, opacity: Math.max(0, 1 - eOut) }}>
           <div ref={lRef} style={{ opacity:lVis?1:0, transform:lVis?"translateX(0)":"translateX(-40px)", transition:"all .9s .1s cubic-bezier(.16,1,.3,1)" }}>
             <SecLabel num="04" label="Stack" />
@@ -1353,6 +1369,7 @@ function Skills({ p }) {
  * Esta tela "desce do teto" (yOffset negativo vindo para o 0) quando o scroll geral passa dos 85%.
  */
 function Contact({ p }) {
+  const nb = useNotebook();
   const isCin = p !== undefined;
   // LÓGICA DE TEMPO IDÊNTICA
   const enterT = isCin ? Math.max(0, Math.min((p - 0.85) / 0.15, 1)) : 1; // Animação Iniciada: Scroll a >= 85%. Duração: 15%.
@@ -1368,7 +1385,7 @@ function Contact({ p }) {
   ];
 
   const content = (
-    <section id="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? "60px 48px" : "120px 48px 100px", background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
+    <section id="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? (nb ? "36px 28px" : "60px 48px") : (nb ? "80px 32px 72px" : "120px 48px 100px"), background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
       <div style={{ maxWidth:1060, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
         <div style={{ textAlign: "center", marginBottom: 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
           <SecLabel num="05" label="Contato" />
