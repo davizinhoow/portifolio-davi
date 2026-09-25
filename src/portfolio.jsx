@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, createContext, useContext } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, createContext, useContext, Fragment } from "react";
 import fotoSantander from './assets/quem-sou/eu no santander.jpeg';
 import fotoPerfil from './assets/quem-sou/eu.jpeg';
 import fotoPollo from './assets/quem-sou/davi-de-pollo.jpeg';
@@ -91,6 +91,7 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 @keyframes particleFly{0%{opacity:0;transform:translateY(0) scale(0);}20%{opacity:1;}100%{opacity:0;transform:translateY(-80px) scale(1.4);}}
 @keyframes fromRight{from{opacity:0;transform:translateX(55px);}to{opacity:1;transform:translateX(0);}}
 @keyframes fromLeft{from{opacity:0;transform:translateX(-55px);}to{opacity:1;transform:translateX(0);}}
+@keyframes tcBlink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
 @keyframes fromDown{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
 
 @keyframes floatZeroG1 {
@@ -153,7 +154,8 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 .sbtn:hover .sarr{transform:rotate(45deg);background:${T.gold};border-color:${T.gold};color:${T.black};}
 
 /* ── nav: idioma & CV ── */
-.lang-sw{display:inline-flex;align-items:center;gap:8px;border:1px solid ${T.border};padding:6px 12px;}
+.lang-sw{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid ${T.border};padding:6px 12px;}
+.lang-ind{position:absolute;bottom:3px;left:0;height:1px;background:${T.gold};pointer-events:none;}
 .lang-btn{background:none;border:none;cursor:none;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.2em;color:${T.muted};transition:color .3s;padding:0;}
 .lang-btn:hover{color:${T.goldL};}
 .lang-btn.sel{color:${T.gold};}
@@ -494,9 +496,6 @@ const TrendIcon = (props) => (
 const SERVICE_ICONS = [WorkflowIcon, AgentIcon, ServerIcon, TrendIcon];
 
 /* ══ IDIOMA (PT | EN) ══════════════════════════════════════════════ */
-// Destaque dourado usado dentro dos parágrafos traduzidos.
-const Em = ({ children }) => <em style={{ color: T.goldL }}>{children}</em>;
-
 const I18N = {
   pt: {
     nav: { bio: "Quem Sou", trajetoria: "Trajetória", servicos: "Serviços", contatos: "Contato", cv: "Baixar CV" },
@@ -603,82 +602,199 @@ const useLang = () => useContext(LangContext);
 // Resolve campos bilíngues ({ pt, en }) dos arrays de dados; strings simples passam direto.
 const tr = (v, lang) => (v && typeof v === "object" && "pt" in v ? v[lang] : v);
 
+/* ══ DIGITAÇÃO NA TROCA DE IDIOMA ══════════════════════════════════════════ */
+/**
+ * Ao trocar PT <-> EN, cada <TText> apaga o texto atual (backspace) e digita o novo com um cursor "|" dourado.
+ * O TypeDirector orquestra a cascata: só anima a nav e o painel que domina a tela (o resto troca na hora),
+ * em ordem de leitura, com a onda inteira espalhada em TYPE_WAVE_MS. O último texto a terminar fica com o
+ * cursor piscando e depois ele some suavemente. Com prefers-reduced-motion a troca é instantânea.
+ */
+const TYPE_MS_PER_CHAR = 45;        // ritmo natural de digitação (textos curtos)
+const TYPE_ERASE_MS_PER_CHAR = 20;  // apagar é mais rápido que digitar
+const TYPE_MAX_MS = 600;            // teto da digitação: textos longos são comprimidos
+const TYPE_ERASE_MAX_MS = 300;      // teto do apagar (~30% do total)
+const TYPE_WAVE_MS = 500;           // duração da onda da cascata, independente da quantidade de textos
+const CURSOR_FADE_FAST_MS = 200;    // cursores intermediários
+const CURSOR_BLINK_MS = 1500;       // cursor final pisca (~3 vezes)...
+const CURSOR_FADE_SLOW_MS = 500;    // ...e some devagar
+
+// Quebra o texto em trechos; "*assim*" vira trecho dourado (mesma marcação usada no I18N).
+const toSegs = (text) => String(text ?? "").split(/(\*[^*]+\*)/g).filter(Boolean)
+  .map(part => (part.length > 2 && part.startsWith("*") && part.endsWith("*") ? { t: part.slice(1, -1), em: true } : { t: part, em: false }));
+const segsLen = (segs) => segs.reduce((acc, s) => acc + s.t.length, 0);
+
+// Renderiza só os n primeiros caracteres, mantendo a formatação de cada trecho.
+function renderSegs(segs, n) {
+  const out = [];
+  let left = n;
+  segs.forEach((s, i) => {
+    if (left <= 0) return;
+    const part = s.t.slice(0, left);
+    left -= part.length;
+    out.push(s.em ? <em key={i} style={{ color: T.goldL, fontStyle: "normal" }}>{part}</em> : <Fragment key={i}>{part}</Fragment>);
+  });
+  return out;
+}
+
+// Instantes (ms) de cada tecla com ritmo humano: intervalos variam ±30% e são normalizados para caber na duração.
+function keySchedule(count, duration) {
+  if (count <= 0) return [];
+  const gaps = Array.from({ length: count }, () => 0.7 + Math.random() * 0.6);
+  const total = gaps.reduce((acc, g) => acc + g, 0);
+  let acc = 0;
+  return gaps.map(g => ((acc += g) / total) * duration);
+}
+
+function TypeCursor({ phase }) {
+  const phases = {
+    wait: { opacity: 0 },
+    solid: { opacity: 1 },
+    blink: { opacity: 1, animation: "tcBlink .5s step-end infinite" },
+    fadeFast: { opacity: 0, transition: `opacity ${CURSOR_FADE_FAST_MS}ms ease` },
+    fadeSlow: { opacity: 0, transition: `opacity ${CURSOR_FADE_SLOW_MS}ms ease` },
+  };
+  // Âncora de largura e altura zero na baseline: o cursor não altera a quebra nem a altura da linha
+  // (importante nos títulos de line-height .9); a barra visível é posicionada de forma absoluta.
+  return (
+    <span aria-hidden style={{ display: "inline-block", position: "relative", width: 0, height: 0, pointerEvents: "none" }}>
+      <span style={{ position: "absolute", left: "0.08em", bottom: "-0.1em", width: 2, height: "0.9em", background: T.gold, boxShadow: `0 0 6px ${T.gold}66`, ...phases[phase] }} />
+    </span>
+  );
+}
+
+const TypeContext = createContext(null);
+
+// Qual painel domina a tela agora (mesma régua de STAGES que os painéis usam para entrar/sair).
+function activePanel() {
+  const bio = document.getElementById("bio");
+  if (!bio) return "hero";
+  const rect = bio.getBoundingClientRect();
+  if (rect.top > window.innerHeight / 2) return "hero";
+  const max = bio.offsetHeight - window.innerHeight;
+  const p = max > 0 ? Math.min(1, Math.max(0, -rect.top / max)) : 0;
+  let active = "sobre";
+  for (const [id, start] of Object.entries(STAGES)) if (p >= start + STAGE_DUR / 2) active = id;
+  return active;
+}
+
+/**
+ * Componente: TypeDirector
+ * Recebe os pedidos dos TText que mudaram no mesmo commit da troca de idioma (os layout effects dos filhos
+ * rodam antes do dele) e distribui início, duração e quem fica com o cursor final.
+ */
+function TypeDirector({ lang, children }) {
+  const pending = useRef([]);
+  const api = useMemo(() => ({ register: (job) => pending.current.push(job) }), []);
+
+  useLayoutEffect(() => {
+    const jobs = pending.current.splice(0);
+    if (!jobs.length) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const active = activePanel();
+    const onScreen = (el) => { const r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < window.innerHeight; };
+
+    const animated = [];
+    jobs.forEach(job => {
+      const el = job.el();
+      const panel = el?.closest("[data-panel]")?.dataset.panel;
+      const visible = panel === "nav" || panel === active || (panel === "footer" && onScreen(el));
+      if (!reduce && el && visible) animated.push(job); else job.snap();
+    });
+    if (!animated.length) return;
+
+    // Ordem de leitura = ordem no DOM (nav primeiro, depois o painel de cima pra baixo, card a card).
+    animated.sort((a, b) => (a.el().compareDocumentPosition(b.el()) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    const step = animated.length > 1 ? TYPE_WAVE_MS / (animated.length - 1) : 0;
+    const t0 = performance.now();
+    const plans = animated.map((job, i) => ({ job, start: t0 + i * step, end: t0 + i * step + job.duration() }));
+    const last = plans.reduce((m, pl) => (pl.end >= m.end ? pl : m));
+    plans.forEach(pl => pl.job.run(pl.start, pl === last, last.end));
+  }, [lang]);
+
+  return <TypeContext.Provider value={api}>{children}</TypeContext.Provider>;
+}
+
 /**
  * Componente: TText (Typewriter Transition)
- * Quando a linguagem muda (PT <-> EN), apaga as letras da frase atual (backspace)
- * e reescreve a nova frase letra por letra no idioma selecionado.
+ * Texto traduzível. Em repouso é um <span> simples; durante a animação vira um inline-grid com "fantasmas"
+ * invisíveis do texto antigo e do novo empilhados, reservando o espaço do maior para nada ao redor pular.
  */
-function TText({ text, speed = 12, className = "", style = {}, as: Tag = "span", cursor = false }) {
-  const [display, setDisplay] = useState(text);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const targetRef = useRef(text);
-  const currentRef = useRef(text);
+function TText({ text, className = "", style = {} }) {
+  const director = useContext(TypeContext);
+  const ref = useRef(null);
+  const [view, setView] = useState(null); // null = repouso
+  const shown = useRef(null);             // { segs, n } exibido agora (base para apagar, inclusive no meio de outra animação)
+  const job = useRef({ raf: 0, timers: [] });
+  const value = String(text ?? "");
 
-  useEffect(() => {
-    if (text === currentRef.current) return;
-    targetRef.current = text;
-    setIsDeleting(true);
+  useLayoutEffect(() => {
+    const next = toSegs(value);
+    const nextN = segsLen(next);
+    if (shown.current === null) { shown.current = { segs: next, n: nextN }; return; } // montagem
 
-    let timer = null;
+    const j = job.current;
+    const stop = () => { cancelAnimationFrame(j.raf); j.timers.forEach(clearTimeout); j.timers = []; };
+    const snap = () => { stop(); shown.current = { segs: next, n: nextN }; setView(null); };
+    if (!director) { snap(); return; }
 
-    function step() {
-      const cur = currentRef.current || "";
-      const target = targetRef.current || "";
+    const from = shown.current;
+    const eraseMs = Math.min(TYPE_ERASE_MAX_MS, from.n * TYPE_ERASE_MS_PER_CHAR);
+    const typeMs = Math.min(TYPE_MAX_MS, nextN * TYPE_MS_PER_CHAR);
 
-      // Fase 1: Apagar de trás para frente (backspace)
-      if (cur.length > 0) {
-        const stepSize = cur.length > 80 ? Math.ceil(cur.length / 10) : (cur.length > 30 ? Math.ceil(cur.length / 8) : 1);
-        const next = cur.slice(0, Math.max(0, cur.length - stepSize));
-        currentRef.current = next;
-        setDisplay(next);
-        timer = setTimeout(step, Math.max(6, speed - 4));
-        return;
-      }
-
-      // Fase 2: Redigitar para o novo idioma
-      setIsDeleting(false);
-      function typeStep() {
-        const curTyping = currentRef.current || "";
-        const finalTarget = targetRef.current || "";
-        if (curTyping.length < finalTarget.length) {
-          const remaining = finalTarget.length - curTyping.length;
-          const typeStepSize = finalTarget.length > 80 ? Math.ceil(remaining / 12) : (finalTarget.length > 30 ? Math.ceil(remaining / 8) : 1);
-          const next = finalTarget.slice(0, curTyping.length + Math.max(1, typeStepSize));
-          currentRef.current = next;
-          setDisplay(next);
-          timer = setTimeout(typeStep, speed);
-        } else {
-          currentRef.current = finalTarget;
-          setDisplay(finalTarget);
-        }
-      }
-
-      timer = setTimeout(typeStep, 35);
-    }
-
-    step();
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [text, speed]);
-
-  const renderContent = (val) => {
-    if (typeof val !== "string" || !val.includes("*")) return val;
-    const parts = val.split(/(\*[^*]+\*)/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith("*") && part.endsWith("*")) {
-        return <em key={idx} style={{ color: T.goldL, fontStyle: "normal" }}>{part.slice(1, -1)}</em>;
-      }
-      return part;
+    director.register({
+      el: () => ref.current,
+      duration: () => eraseMs + typeMs,
+      snap,
+      run: (start, isLast, waveEnd) => {
+        stop();
+        const eraseAt = keySchedule(from.n, eraseMs);
+        const typeAt = keySchedule(nextN, typeMs);
+        const ghosts = [renderSegs(from.segs, from.n), renderSegs(next, nextN)];
+        let sig = "";
+        const paint = (segs, n, cursor) => {
+          const s = `${segs === next}:${n}:${cursor}`;
+          if (s === sig) return;
+          sig = s;
+          shown.current = { segs, n };
+          setView({ content: renderSegs(segs, n), ghosts, cursor });
+        };
+        const finish = () => {
+          shown.current = { segs: next, n: nextN };
+          const full = renderSegs(next, nextN);
+          if (isLast) {
+            // Último da cascata: o layout já pode assumir o tamanho final; o cursor pisca e some devagar.
+            setView({ content: full, ghosts: [], cursor: "blink" });
+            j.timers.push(setTimeout(() => setView(v => v && { ...v, cursor: "fadeSlow" }), CURSOR_BLINK_MS));
+            j.timers.push(setTimeout(() => setView(null), CURSOR_BLINK_MS + CURSOR_FADE_SLOW_MS));
+          } else {
+            // Mantém o espaço reservado até a onda inteira acabar, para o layout mudar uma vez só.
+            setView({ content: full, ghosts, cursor: "fadeFast" });
+            j.timers.push(setTimeout(() => setView(null), Math.max(CURSOR_FADE_FAST_MS, waveEnd - performance.now())));
+          }
+        };
+        const tick = (now) => {
+          const t = now - start;
+          if (t >= eraseMs + typeMs) { finish(); return; }
+          if (t < 0) paint(from.segs, from.n, "wait");
+          else if (t < eraseMs) paint(from.segs, from.n - eraseAt.filter(x => x <= t).length, "solid");
+          else paint(next, typeAt.filter(x => x <= t - eraseMs).length, "solid");
+          j.raf = requestAnimationFrame(tick);
+        };
+        paint(from.segs, from.n, "wait"); // mesmo commit da troca: segura o texto antigo, sem piscar o novo
+        j.raf = requestAnimationFrame(tick);
+      },
     });
-  };
+  }, [value, director]);
 
+  useEffect(() => () => { cancelAnimationFrame(job.current.raf); job.current.timers.forEach(clearTimeout); }, []);
+
+  if (!view) return <span ref={ref} className={className} style={style}>{renderSegs(toSegs(value), Infinity)}</span>;
   return (
-    <Tag className={className} style={{ display: "inline", ...style }}>
-      {renderContent(display)}
-      {cursor && isDeleting && <span style={{ color: T.gold, opacity: 0.8, marginLeft: 2 }}>|</span>}
-    </Tag>
+    // vertical-align: top evita que a caixa inline-grid, alinhada pela baseline, estique a linha em títulos de line-height baixo.
+    <span ref={ref} className={className} style={{ ...style, display: "inline-grid", verticalAlign: "top" }}>
+      {view.ghosts.map((g, i) => <span key={i} aria-hidden style={{ gridArea: "1 / 1", visibility: "hidden" }}>{g}</span>)}
+      <span style={{ gridArea: "1 / 1" }}>{view.content}<TypeCursor phase={view.cursor} /></span>
+    </span>
   );
 }
 
@@ -777,8 +893,20 @@ function Nav() {
 
   const links = ["bio", "trajetoria", "servicos", "contatos"].map(id => ({ id, label: t.nav[id] }));
 
+  // Sublinhado dourado que desliza até a sigla ativa (sem transição na montagem, para não "deslizar" ao carregar).
+  const langBtns = useRef({});
+  const langInd = useRef(null);
+  useLayoutEffect(() => {
+    const btn = langBtns.current[lang], ind = langInd.current;
+    if (!btn || !ind) return;
+    const first = !ind.style.width;
+    ind.style.transition = first ? "none" : "transform .45s cubic-bezier(.77,0,.18,1), width .45s cubic-bezier(.77,0,.18,1)";
+    ind.style.width = btn.offsetWidth + "px";
+    ind.style.transform = `translateX(${btn.offsetLeft}px)`;
+  }, [lang]);
+
   return (
-    <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding: nb ? "14px 28px" : "16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:scrolled?`${T.dark}f2`:"transparent", backdropFilter:scrolled?"blur(20px)":"none", borderBottom:`1px solid ${scrolled?T.border:"transparent"}`, transition:"all .5s" }}>
+    <nav data-panel="nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding: nb ? "14px 28px" : "16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:scrolled?`${T.dark}f2`:"transparent", backdropFilter:scrolled?"blur(20px)":"none", borderBottom:`1px solid ${scrolled?T.border:"transparent"}`, transition:"all .5s" }}>
       <button data-h onClick={() => go("hero")} style={{ background:"none", border:"none", cursor:"none", fontFamily:"'Bebas Neue',sans-serif", fontSize:20, letterSpacing:"0.15em" }}>
         <span className="gold-text">Davi</span><span style={{ color:T.white }}>Freitas</span>
       </button>
@@ -794,11 +922,12 @@ function Nav() {
           {["pt", "en"].map((code, i) => (
             <span key={code} style={{ display:"inline-flex", alignItems:"center", gap:8 }}>
               {i > 0 && <span style={{ width:1, height:10, background:T.border2 }} />}
-              <button data-h className={`lang-btn${lang === code ? " sel" : ""}`} onClick={() => setLang(code)} aria-pressed={lang === code}>
+              <button data-h ref={el => { langBtns.current[code] = el; }} className={`lang-btn${lang === code ? " sel" : ""}`} onClick={() => setLang(code)} aria-pressed={lang === code}>
                 {code.toUpperCase()}
               </button>
             </span>
           ))}
+          <span ref={langInd} className="lang-ind" />
         </div>
         <a
           data-h
@@ -873,7 +1002,7 @@ function Hero() {
   });
 
   return (
-    <div id="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
+    <div id="hero" data-panel="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
       <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
         
         <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)` }} />
@@ -1000,7 +1129,7 @@ function PanelSobre({ p }) {
   const isGone = p > STAGES.carreira + 0.16;
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
+    <div data-panel="sobre" style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1.15fr", gap: nb ? 64 : 120, alignItems:"center", maxWidth:1440, width:"100%", margin:"auto" }}>
 
         {/* foto: voa pra esquerda e pra baixo fugindo e rotacionando */}
@@ -1222,7 +1351,7 @@ function PanelCarreira({ p }) {
   const eOut = leaveT * leaveT * leaveT; // Curva suavizada
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.dark, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: enterT > 0 && leaveT < 1 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 50%)`, zIndex: 20 }}>
+    <div data-panel="carreira" style={{ position: "absolute", inset: 0, background: T.dark, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: enterT > 0 && leaveT < 1 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 50%)`, zIndex: 20 }}>
       {/* Se quiser permitir scroll interno desse box enquanto rola a página não rola, mas em tela cheia cabe assim. O wrap tem auto. */}
       <div style={{ maxWidth:860, width:"100%", margin:"auto" }}>
         
@@ -1386,7 +1515,7 @@ function PanelProjetos({ p }) {
   const eOut = leaveT * leaveT * leaveT; // Curva bezier para animar saída mais dramática
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.black, padding: nb ? "60px 32px" : "100px 48px", overflowY: "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 100%)`, zIndex: 30, display:"flex", alignItems:"center" }}>
+    <div data-panel="projetos" style={{ position: "absolute", inset: 0, background: T.black, padding: nb ? "60px 32px" : "100px 48px", overflowY: "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 100%)`, zIndex: 30, display:"flex", alignItems:"center" }}>
       <div style={{ maxWidth:1200, width:"100%", margin:"auto" }}>
         
         {/* Título foge também pra esquerda na saída */}
@@ -1479,7 +1608,7 @@ function PanelServicos({ p }) {
   const sv = tx.services;
 
   return (
-    <div style={{ position:"absolute", inset:0, background:T.black, padding: nb ? "68px 32px 24px" : "100px 48px 60px", overflowY:"auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath:`circle(${eIn * 150}% at 0% 50%)`, zIndex:45, display:"flex", alignItems:"center" }}>
+    <div data-panel="servicos" style={{ position:"absolute", inset:0, background:T.black, padding: nb ? "68px 32px 24px" : "100px 48px 60px", overflowY:"auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath:`circle(${eIn * 150}% at 0% 50%)`, zIndex:45, display:"flex", alignItems:"center" }}>
       <div style={{ maxWidth:1240, width:"100%", margin:"auto" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom: nb ? 24 : 48, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, ${(1 - eIn) * 30 - eOut * 80}px) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
@@ -1600,9 +1729,9 @@ function BioSection() {
           <Contact p={scrollP} />
 
           {/* Dica visual indicando que requer rolagem do mouse */}
-          <div style={{ position:"absolute", bottom:40, left:"50%", transform:"translateX(-50%)", display:"flex", flexDirection:"column", alignItems:"center", gap:8, opacity: Math.max(0, 0.4 - scrollP * 2), pointerEvents:"none", zIndex: 100 }}>
+          <div data-panel="sobre" style={{ position:"absolute", bottom:40, left:"50%", transform:"translateX(-50%)", display:"flex", flexDirection:"column", alignItems:"center", gap:8, opacity: Math.max(0, 0.4 - scrollP * 2), pointerEvents:"none", zIndex: 100 }}>
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", color:T.muted, textTransform:"uppercase" }}>
-              {tx.hint}
+              <TText text={tx.hint} />
             </span>
             <div style={{ width:1, height:16, background:`linear-gradient(to bottom, ${T.goldD}, transparent)` }} />
           </div>
@@ -1795,7 +1924,7 @@ function Skills({ p }) {
   }, [lVis]);
 
   const content = (
-    <section id="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? (nb ? "0 28px" : "0 48px") : (nb ? "100px 32px" : "140px 48px"), background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
+    <section id="skills" data-panel="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? (nb ? "0 28px" : "0 48px") : (nb ? "100px 32px" : "140px 48px"), background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
       {/* Logos com física via ref (saem da animação CSS) */}
       <div style={{ position: "absolute", inset: 0, opacity: Math.max(0, 1 - eOut), transform: `scale(${1 - eOut*0.3})`, pointerEvents: "none" }}>
         {LOGO_DEFS.map((logo, i) => (
@@ -1903,7 +2032,7 @@ function Contact({ p }) {
   ].map((link, i) => ({ ...link, desc: tx.contact.links[i] }));
 
   const content = (
-    <section id="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? (nb ? "36px 28px" : "60px 48px") : (nb ? "80px 32px 72px" : "120px 48px 100px"), background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
+    <section id="contatos" data-panel="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? (nb ? "36px 28px" : "60px 48px") : (nb ? "80px 32px 72px" : "120px 48px 100px"), background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
       <div style={{ maxWidth:1060, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
         <div style={{ textAlign: "center", marginBottom: 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
           <SecLabel num="06" label={tx.contact.label} />
@@ -1976,7 +2105,7 @@ function Footer() {
   return (
     <>
       <SDivider />
-      <footer style={{ padding:"36px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:T.black, flexWrap:"wrap", gap:16 }}>
+      <footer data-panel="footer" style={{ padding:"36px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:T.black, flexWrap:"wrap", gap:16 }}>
         <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:"0.12em" }}>
           <span className="gold-text">Davi</span><span style={{color:T.muted}}>freitas</span>
         </span>
@@ -2016,6 +2145,7 @@ export default function Portfolio() {
 
   return (
     <LangContext.Provider value={{ lang, setLang, t: I18N[lang] }}>
+    <TypeDirector lang={lang}>
       <style>{CSS}</style>
       <div id="cur-dot" />
       <div id="cur-ring" />
@@ -2033,6 +2163,7 @@ export default function Portfolio() {
         </section>
       </main>
       <Footer />
+    </TypeDirector>
     </LangContext.Provider>
   );
 }
