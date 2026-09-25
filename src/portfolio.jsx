@@ -508,7 +508,7 @@ const I18N = {
     bio: {
       label: "Quem Sou",
       title: ["TECNOLOGIA &", "INTELIGÊNCIA", "ARTIFICIAL"],
-      p1: <>Sou desenvolvedor Full Stack com forte inclinação para IA e especialista em <Em>automações de sistemas</Em>. Crio arquiteturas escaláveis e integro modelos de <Em>Machine Learning</Em> e <Em>IAs Generativas</Em> para otimizar processos e automatizar fluxos complexos.</>,
+      p1: "Sou desenvolvedor Full Stack com forte inclinação para IA e especialista em *automações de sistemas*. Crio arquiteturas escaláveis e integro modelos de *Machine Learning* e *IAs Generativas* para otimizar processos e automatizar fluxos complexos.",
       p2: "Da configuração de robôs operacionais ao treinamento de modelos e criação de interfaces intuitivas, conecto dados a soluções tecnológicas autônomas.",
       metrics: [
         { v: "+30k", l: "Registros / Alunos Impactados" },
@@ -557,7 +557,7 @@ const I18N = {
     bio: {
       label: "About",
       title: ["TECHNOLOGY &", "ARTIFICIAL", "INTELLIGENCE"],
-      p1: <>I'm a Full Stack Engineer with a strong focus on AI and a specialist in <Em>End-to-End Automation</Em>. I design scalable architectures and integrate <Em>Machine Learning</Em> and <Em>Generative AI</Em> models to streamline operations and automate complex workflows.</>,
+      p1: "I'm a Full Stack Engineer with a strong focus on AI and a specialist in *End-to-End Automation*. I design scalable architectures and integrate *Machine Learning* and *Generative AI* models to streamline operations and automate complex workflows.",
       p2: "From operational bots to model training and intuitive interfaces, I turn data into autonomous, production-ready systems.",
       metrics: [
         { v: "+30k", l: "Records / Students Impacted" },
@@ -604,6 +604,85 @@ const useLang = () => useContext(LangContext);
 const tr = (v, lang) => (v && typeof v === "object" && "pt" in v ? v[lang] : v);
 
 /**
+ * Componente: TText (Typewriter Transition)
+ * Quando a linguagem muda (PT <-> EN), apaga as letras da frase atual (backspace)
+ * e reescreve a nova frase letra por letra no idioma selecionado.
+ */
+function TText({ text, speed = 12, className = "", style = {}, as: Tag = "span", cursor = false }) {
+  const [display, setDisplay] = useState(text);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const targetRef = useRef(text);
+  const currentRef = useRef(text);
+
+  useEffect(() => {
+    if (text === currentRef.current) return;
+    targetRef.current = text;
+    setIsDeleting(true);
+
+    let timer = null;
+
+    function step() {
+      const cur = currentRef.current || "";
+      const target = targetRef.current || "";
+
+      // Fase 1: Apagar de trás para frente (backspace)
+      if (cur.length > 0) {
+        const stepSize = cur.length > 80 ? Math.ceil(cur.length / 10) : (cur.length > 30 ? Math.ceil(cur.length / 8) : 1);
+        const next = cur.slice(0, Math.max(0, cur.length - stepSize));
+        currentRef.current = next;
+        setDisplay(next);
+        timer = setTimeout(step, Math.max(6, speed - 4));
+        return;
+      }
+
+      // Fase 2: Redigitar para o novo idioma
+      setIsDeleting(false);
+      function typeStep() {
+        const curTyping = currentRef.current || "";
+        const finalTarget = targetRef.current || "";
+        if (curTyping.length < finalTarget.length) {
+          const remaining = finalTarget.length - curTyping.length;
+          const typeStepSize = finalTarget.length > 80 ? Math.ceil(remaining / 12) : (finalTarget.length > 30 ? Math.ceil(remaining / 8) : 1);
+          const next = finalTarget.slice(0, curTyping.length + Math.max(1, typeStepSize));
+          currentRef.current = next;
+          setDisplay(next);
+          timer = setTimeout(typeStep, speed);
+        } else {
+          currentRef.current = finalTarget;
+          setDisplay(finalTarget);
+        }
+      }
+
+      timer = setTimeout(typeStep, 35);
+    }
+
+    step();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [text, speed]);
+
+  const renderContent = (val) => {
+    if (typeof val !== "string" || !val.includes("*")) return val;
+    const parts = val.split(/(\*[^*]+\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith("*") && part.endsWith("*")) {
+        return <em key={idx} style={{ color: T.goldL, fontStyle: "normal" }}>{part.slice(1, -1)}</em>;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <Tag className={className} style={{ display: "inline", ...style }}>
+      {renderContent(display)}
+      {cursor && isDeleting && <span style={{ color: T.gold, opacity: 0.8, marginLeft: 2 }}>|</span>}
+    </Tag>
+  );
+}
+
+/**
  * Componente: SDivider (Divisor de Seção)
  * O que faz: Desenha e anima a linha horizontal dourada e fina que aparece entre algumas áreas.
  */
@@ -621,7 +700,9 @@ const SecLabel = ({ num, label }) => (
   <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:36 }}>
     <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.4em", color:T.gold, textTransform:"uppercase" }}>{num}</span>
     <div style={{ width:40, height:"1px", background:`linear-gradient(to right,${T.goldD},transparent)` }} />
-    <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>{label}</span>
+    <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>
+      <TText text={label} />
+    </span>
   </div>
 );
 
@@ -704,7 +785,7 @@ function Nav() {
       <div style={{ display:"flex", gap: nb ? 20 : 32, alignItems:"center" }}>
         {links.map(l => (
           <button key={l.id} data-h onClick={() => go(l.id)} style={{ background:"none", border:"none", cursor:"none", fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.25em", textTransform:"uppercase", color:active===l.id?T.gold:T.muted, transition:"color .3s", position:"relative", padding:"4px 0" }}>
-            {l.label}
+            <TText text={l.label} />
             <span style={{ position:"absolute", bottom:0, left:0, right:0, height:"1px", background:T.gold, transformOrigin:"left", transform:active===l.id?"scaleX(1)":"scaleX(0)", transition:"transform .4s cubic-bezier(.77,0,.18,1)" }} />
           </button>
         ))}
@@ -728,7 +809,7 @@ function Nav() {
           rel="noreferrer"
         >
           <DownloadIcon size={12} color="currentColor" strokeWidth="2" />
-          {t.nav.cv}
+          <TText text={t.nav.cv} />
         </a>
       </div>
     </nav>
@@ -835,7 +916,7 @@ function Hero() {
 
           <div style={{ transform: `translate(${e * 1200}px, ${e * 300}px)`, opacity: Math.max(0, 1 - t*1.5) }}>
             <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"clamp(17px,2vw,22px)", fontWeight:300, fontStyle:"italic", color:T.cream, lineHeight:1.8, maxWidth:500, marginTop:36, marginBottom:52, opacity:vis?1:0, transition:"opacity .8s 1.05s" }}>
-              {tx.hero.sub}
+              <TText text={tx.hero.sub} />
             </p>
           </div>
         </div>
@@ -1021,22 +1102,22 @@ function PanelSobre({ p }) {
         <div style={{ display:"flex", flexDirection:"column" }}>
           <div style={{ transform: `translate(${e * 400}px, ${-e * 50}px)`, opacity: Math.max(0, 1 - t*1.2) }}>
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(52px,7vw,100px)", lineHeight:.9, color:T.white, marginBottom:32 }}>
-              {tx.bio.title[0]}<br /><span className="gold-text">{tx.bio.title[1]}</span><br />{tx.bio.title[2]}
+              <TText text={tx.bio.title[0]} /><br /><span className="gold-text"><TText text={tx.bio.title[1]} /></span><br /><TText text={tx.bio.title[2]} />
             </h2>
           </div>
           <div style={{ transform: `translate(${e * 500}px, ${e * 20}px)`, opacity: Math.max(0, 1 - t*1.4) }}>
             <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:23, fontWeight:300, lineHeight:1.8, color:T.cream, marginBottom:22 }}>
-              {tx.bio.p1}
+              <TText text={tx.bio.p1} />
             </p>
           </div>
           <div style={{ transform: `translate(${e * 600}px, ${e * 60}px)`, opacity: Math.max(0, 1 - t*1.6) }}>
             <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:21, fontWeight:300, fontStyle:"italic", color:T.muted, lineHeight:1.75 }}>
-              {tx.bio.p2}
+              <TText text={tx.bio.p2} />
             </p>
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, marginTop:56, border:`1px solid ${T.border}`, transform: `translate(${e * 700}px, ${e * 100}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
             {tx.bio.metrics.map((m,i)=>(
-              <MetricCard key={i} v={m.v} l={m.l} last={i===2} />
+              <MetricCard key={i} v={m.v} l={<TText text={m.l} />} last={i===2} />
             ))}
           </div>
         </div>
@@ -1110,9 +1191,9 @@ function CareerItem({ item, index, animP, leaveP = 0 }) {
             <h3 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:20, fontWeight:700, color:hov?T.goldL:T.white, transition:"color .3s", marginBottom:3 }}>{item.role}</h3>
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.gold, textTransform:"uppercase" }}>{item.company}</span>
           </div>
-          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, color:T.muted, border:`1px solid ${T.border}`, padding:"3px 8px", textTransform:"uppercase", flexShrink:0 }}>{tr(item.type, lang)}</span>
+          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, color:T.muted, border:`1px solid ${T.border}`, padding:"3px 8px", textTransform:"uppercase", flexShrink:0 }}><TText text={tr(item.type, lang)} /></span>
         </div>
-        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontWeight:300, color:T.muted, lineHeight:1.65, marginBottom:12 }}>{tr(item.desc, lang)}</p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontWeight:300, color:T.muted, lineHeight:1.65, marginBottom:12 }}><TText text={tr(item.desc, lang)} /></p>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {item.tags.map(t => (
             <span key={t} style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:"0.12em", textTransform:"uppercase", color:hov?T.gold:T.muted, border:`1px solid ${hov?T.goldD:T.border}`, padding:"2px 8px", transition:"all .3s" }}>{t}</span>
@@ -1150,11 +1231,11 @@ function PanelCarreira({ p }) {
           <div>
             <SecLabel num="02" label={tx.career.label} />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,76px)", lineHeight:.9, color:T.white }}>
-              {tx.career.title[0]}<br /><span className="gold-text">{tx.career.title[1]}</span>
+              <TText text={tx.career.title[0]} /><br /><span className="gold-text"><TText text={tx.career.title[1]} /></span>
             </h2>
           </div>
           <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontStyle:"italic", color:T.muted, maxWidth:180, lineHeight:1.7 }}>
-            {tx.career.note}
+            <TText text={tx.career.note} />
           </p>
         </div>
 
@@ -1269,14 +1350,14 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
         <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, color:T.muted }}>{p.year}</span>
       </div>
       <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:p.large?"clamp(36px,5vw,62px)":"clamp(28px,3.5vw,44px)", lineHeight:.9, color:hov?T.goldL:T.white, marginBottom:16, transition:"color .35s", position:"relative" }}>{p.title}</h3>
-      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:17, fontWeight:300, color:T.muted, lineHeight:1.7, marginBottom:28, maxWidth:p.large?580:"100%", position:"relative" }}>{tr(p.desc, lang)}</p>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:17, fontWeight:300, color:T.muted, lineHeight:1.7, marginBottom:28, maxWidth:p.large?580:"100%", position:"relative" }}><TText text={tr(p.desc, lang)} /></p>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", position:"relative" }}>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
           {p.tags.map(t=><span key={t} style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.12em", textTransform:"uppercase", color:hov?T.gold:T.muted, border:`1px solid ${hov?T.goldD:T.border}`, padding:"4px 12px", transition:"all .3s" }}>{t}</span>)}
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8, opacity:hov?1:0, transform:hov?"translate(0,0)":"translate(-12px,8px)", transition:"all .4s" }}>
           <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", textTransform:"uppercase", color:T.gold }}>
-            {p.link && p.link !== "#" ? tx.projects.view : (p.status || tx.projects.soon)}
+            <TText text={p.link && p.link !== "#" ? tx.projects.view : (p.status || tx.projects.soon)} />
           </span>
           {p.link && p.link !== "#" ? (
             <ArrowExternalIcon size={11} color={T.gold} />
@@ -1313,10 +1394,10 @@ function PanelProjetos({ p }) {
           <div>
             <SecLabel num="03" label={tx.projects.label} />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(48px,7vw,80px)", lineHeight:.9, color:T.white, transform:`translateY(${(1 - eIn) * 30}px)` }}>
-              {tx.projects.title[0]}<br /><span className="gold-text">{tx.projects.title[1]}</span>
+              <TText text={tx.projects.title[0]} /><br /><span className="gold-text"><TText text={tx.projects.title[1]} /></span>
             </h2>
           </div>
-          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontStyle:"italic", color:T.muted, maxWidth:200, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}>{tx.projects.note}</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontStyle:"italic", color:T.muted, maxWidth:200, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}><TText text={tx.projects.note} /></p>
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:2 }}>
           {PROJECTS.map((proj,i) => <ProjectCard key={i} p={proj} idx={i} animP={eIn} leaveP={eOut} />)}
@@ -1368,9 +1449,9 @@ function ServiceCard({ s, tags, idx, animP, leaveP }) {
         <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", color:T.goldD }}>{String(idx + 1).padStart(2, "0")}</span>
       </div>
 
-      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.gold, textTransform:"uppercase", marginBottom:10, position:"relative" }}>{s.kicker}</span>
-      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 24 : "clamp(24px,2.1vw,32px)", lineHeight:.95, letterSpacing:"0.02em", color:hov?T.goldL:T.white, marginBottom:12, transition:"color .35s", position:"relative" }}>{s.title}</h3>
-      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 15 : 16, fontWeight:300, color:T.muted, lineHeight:1.6, marginBottom:18, flex:1, position:"relative" }}>{s.desc}</p>
+      <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.gold, textTransform:"uppercase", marginBottom:10, position:"relative" }}><TText text={s.kicker} /></span>
+      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 24 : "clamp(24px,2.1vw,32px)", lineHeight:.95, letterSpacing:"0.02em", color:hov?T.goldL:T.white, marginBottom:12, transition:"color .35s", position:"relative" }}><TText text={s.title} /></h3>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 15 : 16, fontWeight:300, color:T.muted, lineHeight:1.6, marginBottom:18, flex:1, position:"relative" }}><TText text={s.desc} /></p>
 
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", position:"relative" }}>
         {tags.map(tag => (
@@ -1406,10 +1487,10 @@ function PanelServicos({ p }) {
             <SecLabel num="05" label={sv.label} />
             {/* No notebook o título fica numa linha só para o painel caber em telas de ~768px de altura */}
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? "clamp(40px,4.4vw,60px)" : "clamp(48px,7vw,80px)", lineHeight:.9, color:T.white, marginTop: nb ? -16 : 0 }}>
-              {sv.title[0]}{nb ? " " : <br />}<span className="gold-text">{sv.title[1]}</span>
+              <TText text={sv.title[0]} />{nb ? " " : <br />}<span className="gold-text"><TText text={sv.title[1]} /></span>
             </h2>
           </div>
-          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:16, fontStyle:"italic", color:T.muted, maxWidth:300, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}>{sv.note}</p>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:16, fontStyle:"italic", color:T.muted, maxWidth:300, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}><TText text={sv.note} /></p>
         </div>
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:2 }}>
@@ -1418,14 +1499,14 @@ function PanelServicos({ p }) {
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap: nb ? 32 : 56, alignItems:"center", marginTop: nb ? 20 : 44, paddingTop: nb ? 18 : 32, borderTop:`1px solid ${T.border}`, transform:`translate(${eOut * 300}px, ${(1 - eIn) * 60 + eOut * 80}px)`, opacity: Math.max(0, eIn * 1.2 - 0.2) * Math.max(0, 1 - eOut * 1.5) }}>
           <div>
-            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>{sv.processLabel}</span>
+            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}><TText text={sv.processLabel} /></span>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap: nb ? 20 : 32, marginTop:16 }}>
               {sv.steps.map((step, i) => (
                 <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
                   <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 30 : 36, lineHeight:1 }}>{String(i + 1).padStart(2, "0")}</span>
                   <div>
-                    <h4 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 16 : 18, fontWeight:700, color:T.white, lineHeight:1.25, marginBottom:4 }}>{step.title}</h4>
-                    <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 14 : 15, fontWeight:300, color:T.muted, lineHeight:1.5 }}>{step.desc}</p>
+                    <h4 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 16 : 18, fontWeight:700, color:T.white, lineHeight:1.25, marginBottom:4 }}><TText text={step.title} /></h4>
+                    <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 14 : 15, fontWeight:300, color:T.muted, lineHeight:1.5 }}><TText text={step.desc} /></p>
                   </div>
                 </div>
               ))}
@@ -1433,7 +1514,7 @@ function PanelServicos({ p }) {
           </div>
           <a data-h className="svc-cta" href={whatsappLink(sv.waMsg)} target="_blank" rel="noreferrer">
             <ChatIcon size={18} color="currentColor" />
-            {sv.cta}
+            <TText text={sv.cta} />
             <span className="svc-arr" style={{ display:"inline-flex" }}><ArrowExternalIcon size={12} color="currentColor" /></span>
           </a>
         </div>
@@ -1751,9 +1832,9 @@ function Skills({ p }) {
           <div ref={lRef} style={{ opacity:lVis?1:0, transform:lVis?"translateX(0)":"translateX(-40px)", transition:"all .9s .1s cubic-bezier(.16,1,.3,1)" }}>
             <SecLabel num="04" label={tx.skills.label} />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,68px)", lineHeight:.9, color:T.white }}>
-              {tx.skills.title[0]}<br /><span className="gold-text">{tx.skills.title[1]}</span>
+              <TText text={tx.skills.title[0]} /><br /><span className="gold-text"><TText text={tx.skills.title[1]} /></span>
             </h2>
-            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:17, fontWeight:300, fontStyle:"italic", color:T.muted, lineHeight:1.75, marginTop:28 }}>{tx.skills.note}</p>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:17, fontWeight:300, fontStyle:"italic", color:T.muted, lineHeight:1.75, marginTop:28 }}><TText text={tx.skills.note} /></p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginTop:36 }}>
               {["React","Next.js","JavaScript","Node.js","Python","SQL","MongoDB","LangChain","Docker","AWS","AGNO","Flask","N8N","Github","Express.js","Tailwind"].map((tag,i)=>(
                 <span key={tag} data-h style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.14em", textTransform:"uppercase", color:i%4===0?T.gold:T.muted, border:`1px solid ${i%4===0?T.goldD:T.border}`, padding:"5px 11px", opacity:lVis?1:0, transition:`opacity .5s ${.3+i*.04}s` }}>{tag}</span>
@@ -1827,10 +1908,10 @@ function Contact({ p }) {
         <div style={{ textAlign: "center", marginBottom: 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
           <SecLabel num="06" label={tx.contact.label} />
           <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,68px)", lineHeight:.9, color:T.white, marginTop:24 }}>
-            {tx.contact.title[0]} <span className="gold-text">{tx.contact.title[1]}</span>
+            <TText text={tx.contact.title[0]} /> <span className="gold-text"><TText text={tx.contact.title[1]} /></span>
           </h2>
           <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:20, color:T.muted, lineHeight:1.6, marginTop:24, maxWidth:500, margin:"24px auto 0" }}>
-            {tx.contact.sub}
+            <TText text={tx.contact.sub} />
           </p>
         </div>
 
@@ -1861,7 +1942,7 @@ function Contact({ p }) {
             >
               <div className="card-bg" style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse at top, ${T.goldD}15, transparent 70%)`, opacity:0, transition:"opacity .4s", pointerEvents:"none" }} />
               <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:36, color:T.white, marginBottom:16, position:"relative" }}>{link.label}</h3>
-              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:18, color:T.muted, position:"relative" }}>{link.desc}</p>
+              <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:18, color:T.muted, position:"relative" }}><TText text={link.desc} /></p>
               <div style={{ marginTop:24, position:"relative", display:"flex" }}><ArrowExternalIcon size={18} color={T.gold} /></div>
             </a>
           ))}
@@ -1900,11 +1981,11 @@ function Footer() {
           <span className="gold-text">Davi</span><span style={{color:T.muted}}>freitas</span>
         </span>
         <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.25em", color:T.muted, textTransform:"uppercase" }}>
-          © {new Date().getFullYear()} · Davi Freitas · {tx.footer.rights}
+          © {new Date().getFullYear()} · Davi Freitas · <TText text={tx.footer.rights} />
         </span>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
           <Diamond size={5} />
-          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.muted }}>{tx.footer.made}</span>
+          <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.muted }}><TText text={tx.footer.made} /></span>
         </div>
       </footer>
     </>
