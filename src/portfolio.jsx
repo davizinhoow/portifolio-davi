@@ -17,7 +17,7 @@ const CV_URLS = {
   en: "/Resume_Davi_Freitas_EN.pdf",
 };
 // Número do WhatsApp no formato internacional, só dígitos (DDI + DDD + número).
-const WHATSAPP_NUMBER = "5511900000000";
+const WHATSAPP_NUMBER = "5511933782810";
 const whatsappLink = (msg) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 
 // Logos e Mídias
