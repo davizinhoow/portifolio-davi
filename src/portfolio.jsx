@@ -223,7 +223,10 @@ function scrollToSection(id, durationMs = 600) {
 
     const sectionProgress = SECTION_SCROLL_MAP[id];
     const maxScroll = Math.max(0, bio.offsetHeight - window.innerHeight);
-    targetY = bio.offsetTop + maxScroll * sectionProgress;
+    // offsetTop vem errado (~1px) porque a <section> pai é animada; usa a posição absoluta real na página
+    const bioRect = bio.getBoundingClientRect();
+    const bioAbsoluteTop = window.scrollY + bioRect.top;
+    targetY = bioAbsoluteTop + maxScroll * sectionProgress;
   } else {
     // Fallback para IDs comuns fora do mapa virtual
     const el = document.getElementById(id);
@@ -314,7 +317,6 @@ function useInView(thresh = 0.1) {
 /**
  * useParallax: Efeito de Profundidade
  * O que faz: Faz um elemento se mover numa velocidade diferente da rolagem da página.
- * Uso prático: Cria a ilusão de profundidade, como as montanhas que passam devagar atrás de uma janela de carro.
  */
 function useParallax(speed = 0.2) {
   const ref = useRef(null);
@@ -993,7 +995,7 @@ function Hero() {
 
   return (
     <div id="hero" data-panel="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
-      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center", padding: nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
+      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "safe center", padding: nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
         
         <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)` }} />
         <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 52% 62% at ${mp.x*100}% ${mp.y*100}%,${T.goldD}26 0%,transparent 65%)`, transition:"background .7s ease", pointerEvents:"none", opacity: Math.max(0, 1 - t*2) }} />
@@ -1021,7 +1023,8 @@ function Hero() {
             </div>
           </div>
 
-          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(72px,13vw,156px)", lineHeight:.88, letterSpacing:"0.02em" }}>
+          {/* Limitado também pela altura (vh) para não estourar a tela em monitores baixos e subir por baixo do nav */}
+          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(56px,min(13vw,15vh),156px)", lineHeight:.88, letterSpacing:"0.02em" }}>
             {[{t:"INTELLIGENT",g:false,d:".28s"},{t:"SYSTEMS",g:true,d:".48s"},{t:"ENGINEERING",g:false,d:".68s"}].map(({t,g,d}, i) => (
               <div key={t} style={{ overflow:"hidden" }}>
                 <div style={{ transform: `translate(${-e * (1200 + i*400)}px, ${-e * (200 + i*150)}px) rotate(${-e * (i * 3)}deg)`, opacity: Math.max(0, 1 - t*1.2) }}>
@@ -1074,6 +1077,18 @@ function MetricCard({ v, l, last }) {
 }
 
 /**
+ * Componente: PhotoDot
+ * O que faz: Indicador (pílula) do retrato do "Quem Sou". Ativo fica largo e dourado; inativo acende no hover.
+ */
+function PhotoDot({ active, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div data-h onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ width: active ? 20 : 6, height:4, borderRadius:2, background: active ? T.gold : hov ? T.goldL : T.muted, transition:"all 0.3s ease", cursor:"none" }} />
+  );
+}
+
+/**
  * Componente: PanelSobre (Sua biografia visual)
  * O que faz: É a primeira parada do seu "túnel" de scroll. Aqui ficam as suas fotos e vídeos rodando em loop do lado esquerdo, e o texto de "Quem Sou eu" no lado direito,
  * Ele some flutuando suavemente pra cima/esquerda pra dar lugar a seção da "Carreira".
@@ -1087,45 +1102,19 @@ function PanelSobre({ p }) {
   const [currentPhoto, setCurrentPhoto] = useState(0);
 
   const containerRef = useRef(null);
-  
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    
-    // Função para rodar no evento wheel
-    const handleWheelNative = (e) => {
-      // Impede a rolagem padrão da página (scroll)
-      e.preventDefault(); 
-      e.stopPropagation();
-
-      // Roda a lógica de mudar a imagem
-      if (e.deltaY > 0) {
-        setCurrentPhoto(prev => (prev === mediaItems.length - 1 ? 0 : prev + 1));
-      } else if (e.deltaY < 0) {
-        setCurrentPhoto(prev => (prev === 0 ? mediaItems.length - 1 : prev - 1));
-      }
-    };
-    
-    // Precisamos de passive: false para o preventDefault funcionar sem erro do browser
-    el.addEventListener('wheel', handleWheelNative, { passive: false });
-    
-    return () => {
-      el.removeEventListener('wheel', handleWheelNative);
-    };
-  }, [mediaItems.length]);
 
   const t = stageT(p, STAGES.carreira);
   const e = t * t;
   const isGone = p > STAGES.carreira + 0.16;
 
   return (
-    <div data-panel="sobre" style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
+    <div style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "50px 32px 40px" : "100px 48px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1.15fr", gap: nb ? 64 : 120, alignItems:"center", maxWidth:1440, width:"100%", margin:"auto" }}>
 
         {/* foto: voa pra esquerda e pra baixo fugindo e rotacionando */}
         <div style={{ transform: `translate(${-e * 400}px, ${e * 200}px) rotate(${-e * 10}deg) scale(${1 - e * 0.1})`, opacity: Math.max(0, 1 - t*1.5) }}>
           <SecLabel num="01" label={tx.bio.label} />
-          <div style={{ width:"100%", paddingBottom:"128%", position:"relative", overflow:"hidden", border:`1px solid ${T.border}` }}>
+          <div style={{ width:"100%", paddingBottom: nb ? "120%" : "128%", position:"relative", overflow:"hidden", border:`1px solid ${T.border}` }}>
             <div ref={imgRef} style={{ position:"absolute", inset:"-10%", background:T.card }}>
               <div style={{ position:"absolute", inset:0, backgroundImage:`linear-gradient(${T.border2} 1px,transparent 1px),linear-gradient(90deg,${T.border2} 1px,transparent 1px)`, backgroundSize:"28px 28px", opacity:.7 }} />
               <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 65% 65% at 50% 65%,${T.goldD}35,transparent)` }} />
@@ -1133,39 +1122,24 @@ function PanelSobre({ p }) {
                 
                 <div 
                   ref={containerRef}
-                  style={{ width: nb ? 340 : 480, height: nb ? 340 : 480, position:'relative', marginBottom:36, zIndex: 2 }}
+                  style={{ width: nb ? 340 : 440, height: nb ? 340 : 440, position:'relative', marginBottom: nb ? 20 : 36, zIndex: 2, overflow: "hidden", borderRadius: 14 }}
                 >
                   {mediaItems.map((media, i) => {
-                    const dist = i - currentPhoto;
-                    let normDist = dist;
-                    // Essa lógica faz com que o carrossel seja infinito calculando as pontas
-                    if (Math.abs(dist) > Math.floor(mediaItems.length / 2)) {
-                      normDist = dist > 0 ? dist - mediaItems.length : dist + mediaItems.length;
-                    }
-
-                    let offset = normDist * (nb ? 200 : 280); // Quanto desliza pro lado
-                    let sc = 1 - Math.abs(normDist) * 0.25; // cria profundidade encolhendo os lados
-                    let op = 1 - Math.abs(normDist) * 0.7; // opacidade para clarear os lados
-                    let zi = 10 - Math.abs(normDist);
-                    if (op < 0) op = 0;
-
-                    const isCurrent = normDist === 0;
-
+                    const isCurrent = currentPhoto === i;
                     const mediaStyle = { 
                       width: '100%', 
                       height: '100%', 
                       objectFit: "cover", 
-                      border: `3px solid ${isCurrent ? T.gold : T.border2}`, 
-                      borderRadius: "12px", 
-                      boxShadow: isCurrent ? `0 4px 32px ${T.goldD}55` : 'none',
+                      border: `2px solid ${isCurrent ? T.gold : T.border2}`, 
+                      borderRadius: "14px", 
+                      boxShadow: isCurrent ? `0 8px 36px ${T.goldD}55` : 'none',
                       position: 'absolute',
                       top: 0,
                       left: 0,
-                      opacity: op,
-                      transform: `translateX(${offset}px) scale(${sc})`,
-                      transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                      opacity: isCurrent ? 1 : 0,
+                      transform: isCurrent ? 'scale(1)' : 'scale(0.94)',
+                      transition: 'opacity 0.6s ease, transform 0.6s ease',
                       pointerEvents: isCurrent ? 'auto' : 'none',
-                      zIndex: zi
                     };
 
                     return media.type === 'video' ? (
@@ -1189,26 +1163,26 @@ function PanelSobre({ p }) {
                   })}
                   
                   {/* Indicadores do carrossel */}
-                  <div style={{ position:'absolute', bottom:-18, left:'50%', transform:'translateX(-50%)', display:'flex', gap:6 }}>
+                  <div style={{ position:'absolute', bottom: 12, left:'50%', transform:'translateX(-50%)', display:'flex', gap:6, zIndex: 10, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", padding: "4px 8px", borderRadius: 10 }}>
                     {mediaItems.map((_, i) => (
                       <div 
                         key={i} 
                         onClick={() => setCurrentPhoto(i)}
                         style={{ 
-                          width: currentPhoto === i ? 16 : 6, 
-                          height: 6, 
+                          width: currentPhoto === i ? 18 : 6, 
+                          height: 5, 
                           borderRadius: 3, 
                           background: currentPhoto === i ? T.gold : T.muted,
                           transition: 'all 0.3s ease',
-                          cursor: 'none' 
+                          cursor: 'pointer' 
                         }} 
                       />
                     ))}
                   </div>
                 </div>
 
-                <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 76 : 104, lineHeight:1, letterSpacing:".08em" }}>Davi Freitas</span>
-                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:12, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>davizinhoow</span>
+                <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 68 : 96, lineHeight:1, letterSpacing:".08em" }}>Davi Freitas</span>
+                <span style={{ fontFamily:"'DM Mono',monospace", fontSize:11, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>davizinhoow</span>
               </div>
               {[{top:14,left:14},{top:14,right:14},{bottom:14,left:14},{bottom:14,right:14}].map((s,i)=>(
                 <div key={i} style={{ position:"absolute", width:22, height:22, ...s, borderTop:i<2?`1px solid ${T.goldD}`:"none", borderBottom:i>=2?`1px solid ${T.goldD}`:"none", borderLeft:i%2===0?`1px solid ${T.goldD}`:"none", borderRight:i%2===1?`1px solid ${T.goldD}`:"none" }} />
@@ -1220,21 +1194,21 @@ function PanelSobre({ p }) {
         {/* texto: voam pela direita se dispersando */}
         <div style={{ display:"flex", flexDirection:"column" }}>
           <div style={{ transform: `translate(${e * 400}px, ${-e * 50}px)`, opacity: Math.max(0, 1 - t*1.2) }}>
-            <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(52px,7vw,100px)", lineHeight:.9, color:T.white, marginBottom:32 }}>
+            <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(46px,6.2vw,92px)", lineHeight:.9, color:T.white, marginBottom: nb ? 22 : 32 }}>
               <TText text={tx.bio.title[0]} /><br /><span className="gold-text"><TText text={tx.bio.title[1]} /></span><br /><TText text={tx.bio.title[2]} />
             </h2>
           </div>
           <div style={{ transform: `translate(${e * 500}px, ${e * 20}px)`, opacity: Math.max(0, 1 - t*1.4) }}>
-            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:23, fontWeight:300, lineHeight:1.8, color:T.cream, marginBottom:22 }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 20 : 23, fontWeight:300, lineHeight:1.75, color:T.cream, marginBottom: nb ? 16 : 22 }}>
               <TText text={tx.bio.p1} />
             </p>
           </div>
           <div style={{ transform: `translate(${e * 600}px, ${e * 60}px)`, opacity: Math.max(0, 1 - t*1.6) }}>
-            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:21, fontWeight:300, fontStyle:"italic", color:T.muted, lineHeight:1.75 }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 18 : 21, fontWeight:300, fontStyle:"italic", color:T.muted, lineHeight:1.7 }}>
               <TText text={tx.bio.p2} />
             </p>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, marginTop:56, border:`1px solid ${T.border}`, transform: `translate(${e * 700}px, ${e * 100}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, marginTop: nb ? 36 : 56, border:`1px solid ${T.border}`, transform: `translate(${e * 700}px, ${e * 100}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
             {tx.bio.metrics.map((m,i)=>(
               <MetricCard key={i} v={m.v} l={<TText text={m.l} />} last={i===2} />
             ))}
