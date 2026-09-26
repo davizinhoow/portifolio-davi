@@ -477,23 +477,17 @@ const AgentIcon = (props) => (
   </LineIcon>
 );
 
-const ServerIcon = (props) => (
+// Janela de navegador com código: aplicações web + APIs
+const WebAppIcon = (props) => (
   <LineIcon {...props}>
-    <rect x="3" y="4" width="18" height="6" rx="1.5" />
-    <rect x="3" y="14" width="18" height="6" rx="1.5" />
-    <path d="M7 7h.01M7 17h.01M11 7h6M11 17h6" />
+    <rect x="3" y="4" width="18" height="16" rx="1.5" />
+    <path d="M3 9h18M6.5 6.5h.01M9 6.5h.01" />
+    <polyline points="10 13 8 15 10 17" />
+    <polyline points="14 13 16 15 14 17" />
   </LineIcon>
 );
 
-const TrendIcon = (props) => (
-  <LineIcon {...props}>
-    <path d="M3 3v18h18" />
-    <polyline points="7 15 11 11 14 14 20 7" />
-    <polyline points="16 7 20 7 20 11" />
-  </LineIcon>
-);
-
-const SERVICE_ICONS = [WorkflowIcon, AgentIcon, ServerIcon, TrendIcon];
+const SERVICE_ICONS = [WorkflowIcon, AgentIcon, WebAppIcon];
 
 /* ══ IDIOMA (PT | EN) ══════════════════════════════════════════════ */
 const I18N = {
@@ -503,7 +497,6 @@ const I18N = {
       badge: "AI & Full Stack Developer",
       sub: "Desenvolvedor Full Stack especializado em Inteligência Artificial. Construo soluções inovadoras utilizando Machine Learning, IAs Generativas e sistemas automatizados focados em resolver problemas reais.",
     },
-    hint: "Continue rolando o mouse",
     bio: {
       label: "Quem Sou",
       title: ["TECNOLOGIA &", "INTELIGÊNCIA", "ARTIFICIAL"],
@@ -524,10 +517,9 @@ const I18N = {
       title: ["SERVIÇOS &", "SOLUÇÕES"],
       note: "Freelance & consultoria para empresas que querem escalar operações com IA e automação.",
       items: [
-        { title: "Automação Inteligente de Processos", kicker: "n8n & Workflows", desc: "Integração de CRMs, ERPs, APIs e mensageria (WhatsApp/Telegram), eliminando gargalos operacionais manuais." },
-        { title: "Engenharia de Agentes & GenAI", kicker: "LLMs & RAG", desc: "Agentes autônomos para atendimento, triagem, análise documental e assistentes conectados a bases de dados corporativas." },
-        { title: "APIs & Microsserviços Escaláveis", kicker: "Python · FastAPI · Docker", desc: "Backends em Python (FastAPI), arquitetura limpa, conteinerização Docker e modelagem de bancos relacionais (PostgreSQL/SQL Server)." },
-        { title: "Machine Learning Aplicado ao Negócio", kicker: "Modelos Preditivos", desc: "Modelos preditivos para previsão de churn/evasão, scoring e suporte à tomada de decisão analítica." },
+        { title: "Automação Inteligente de Processos", kicker: "n8n & Workflows", desc: "Integração de ponta a ponta conectando CRMs, ERPs, APIs e mensageria (WhatsApp/Telegram), eliminando trabalho manual e acelerando a operação do negócio." },
+        { title: "Engenharia de Agentes & GenAI", kicker: "LLMs & RAG", desc: "Desenvolvimento de agentes autônomos para triagem inteligente, leitura e extração de documentos, e assistentes conectados às bases de conhecimento internas da empresa." },
+        { title: "Aplicações Web & APIs de Alta Performance", kicker: "Full Stack & FastAPI", desc: "Construção de plataformas web completas, painéis administrativos e dashboards em React/Next.js conectados a backends rápidos, seguros e escaláveis em Python (FastAPI/PostgreSQL)." },
       ],
       processLabel: "Processo",
       steps: [
@@ -552,7 +544,6 @@ const I18N = {
       badge: "AI & Full Stack Developer",
       sub: "Full Stack Engineer specialized in Artificial Intelligence. I build production-grade solutions powered by Predictive Machine Learning, Generative AI and Autonomous AI Agents, focused on solving real business problems.",
     },
-    hint: "Keep scrolling",
     bio: {
       label: "About",
       title: ["TECHNOLOGY &", "ARTIFICIAL", "INTELLIGENCE"],
@@ -573,10 +564,9 @@ const I18N = {
       title: ["SERVICES &", "SOLUTIONS"],
       note: "Freelance & consulting for companies ready to scale operations with AI and automation.",
       items: [
-        { title: "Intelligent Process Automation", kicker: "n8n & Workflows", desc: "CRM, ERP, API and messaging integrations (WhatsApp/Telegram) that eliminate manual operational bottlenecks." },
-        { title: "AI Agents & GenAI Engineering", kicker: "LLMs & RAG", desc: "Autonomous AI Agents for customer support, triage, document analysis and assistants grounded in corporate knowledge bases." },
-        { title: "Scalable APIs & Microservices", kicker: "Python · FastAPI · Docker", desc: "Python (FastAPI) backends, clean architecture, Docker containerization and relational data modeling (PostgreSQL/SQL Server)." },
-        { title: "Applied Machine Learning", kicker: "Predictive Models", desc: "Predictive Machine Learning for churn/dropout forecasting, scoring and data-driven decision support." },
+        { title: "Intelligent Process Automation", kicker: "n8n & Workflows", desc: "End-to-end integration connecting CRMs, ERPs, APIs, and messaging (WhatsApp/Telegram) to eliminate manual bottlenecks and accelerate business operations." },
+        { title: "AI Agents & GenAI Engineering", kicker: "LLMs & RAG", desc: "Autonomous AI agents for intelligent triage, document parsing and extraction, and assistants grounded in proprietary corporate knowledge bases." },
+        { title: "High-Performance Web Apps & APIs", kicker: "Full Stack & FastAPI", desc: "Full-stack web platforms, admin panels, and real-time dashboards with modern React/Next.js interfaces backed by fast, secure Python microservices (FastAPI/PostgreSQL)." },
       ],
       processLabel: "Process",
       steps: [
@@ -1540,22 +1530,21 @@ function PanelProjetos({ p }) {
 // Tags técnicas de cada frente (não traduzidas). Títulos e descrições ficam no I18N.
 const SERVICE_TAGS = [
   ["n8n", "Webhooks", "CRM / ERP", "WhatsApp"],
-  ["LLMs", "RAG", "LangChain", "Agno"],
-  ["FastAPI", "Docker", "PostgreSQL", "SQL Server"],
-  ["Scikit-Learn", "Pandas", "Churn", "Scoring"],
+  ["LLMs", "RAG", "Multi-Agentes", "Automação"],
+  ["React", "FastAPI", "PostgreSQL", "Docker"],
 ];
 
 /**
  * Componente: ServiceCard (Frente de Atuação)
  * O que faz: Card de cada serviço, no mesmo padrão dos projetos (borda dourada e partículas no hover).
- * Entra de baixo em escadinha e, na saída, os dois primeiros fogem pra esquerda e os dois últimos pra direita.
+ * Entra de baixo em escadinha e, na saída, o primeiro foge pra esquerda, o do meio sobe e o último vai pra direita.
  */
 function ServiceCard({ s, tags, idx, animP, leaveP }) {
   const [hov, setHov] = useState(false);
   const nb = useNotebook();
   const Icon = SERVICE_ICONS[idx];
 
-  const dir = idx < 2 ? -1 : 1;
+  const dir = idx - 1;
   const opacity = Math.max(0, animP * 1.5 - idx * 0.15) * Math.max(0, 1 - leaveP * 1.5);
   const inY = (1 - animP) * (60 + idx * 30);
   const outX = leaveP * dir * (300 + idx * 80);
@@ -1594,7 +1583,7 @@ function ServiceCard({ s, tags, idx, animP, leaveP }) {
 /**
  * Componente: PanelServicos (Serviços & Soluções)
  * O que faz: Painel de conversão freelance. Brota como círculo vindo da esquerda (a Stack entrou pela direita),
- * mostra as 4 frentes de atuação, o processo em 3 etapas e o CTA de orçamento via WhatsApp.
+ * mostra as 3 frentes de atuação, o processo em 3 etapas e o CTA de orçamento via WhatsApp.
  * @param {number} p - Progresso geral (0 a 1) vindo do BioSection.
  */
 function PanelServicos({ p }) {
@@ -1622,7 +1611,7 @@ function PanelServicos({ p }) {
           <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:16, fontStyle:"italic", color:T.muted, maxWidth:300, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}><TText text={sv.note} /></p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:2 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap: nb ? 14 : 24 }}>
           {sv.items.map((s, i) => <ServiceCard key={i} s={s} tags={SERVICE_TAGS[i]} idx={i} animP={eIn} leaveP={eOut} />)}
         </div>
 
@@ -1727,14 +1716,6 @@ function BioSection() {
           <PanelServicos p={scrollP} />
 
           <Contact p={scrollP} />
-
-          {/* Dica visual indicando que requer rolagem do mouse */}
-          <div data-panel="sobre" style={{ position:"absolute", bottom:40, left:"50%", transform:"translateX(-50%)", display:"flex", flexDirection:"column", alignItems:"center", gap:8, opacity: Math.max(0, 0.4 - scrollP * 2), pointerEvents:"none", zIndex: 100 }}>
-            <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.2em", color:T.muted, textTransform:"uppercase" }}>
-              <TText text={tx.hint} />
-            </span>
-            <div style={{ width:1, height:16, background:`linear-gradient(to bottom, ${T.goldD}, transparent)` }} />
-          </div>
         </div>
       </div>
     </>
