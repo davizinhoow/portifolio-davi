@@ -1107,7 +1107,7 @@ function Hero() {
     <div id="hero" data-panel="hero" ref={ref} style={{ height: isMobile ? "auto" : "300vh", position: "relative" }}>
       <div style={{ position: isMobile ? "relative" : "sticky", top: 0, height: isMobile ? "auto" : "100vh", minHeight: isMobile ? "100svh" : undefined, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "safe center", padding: isMobile ? "96px 20px 88px" : nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
         
-        <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)` }} />
+        <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)`, pointerEvents:"none" }} />
         <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 52% 62% at ${mp.x*100}% ${mp.y*100}%,${T.goldD}26 0%,transparent 65%)`, transition:"background .7s ease", pointerEvents:"none", opacity: Math.max(0, 1 - t*2) }} />
 
         {/* número decorativo */}
@@ -1788,7 +1788,6 @@ function BioSection() {
   const targetP = useRef(0);
   const currentP = useRef(0);
   const containerRef = useRef(null);
-  const { t: tx } = useLang();
   const isMobile = useIsMobile();
 
   useEffect(() => {
