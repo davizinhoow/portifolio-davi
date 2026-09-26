@@ -58,7 +58,7 @@ const T = {
   black:"#080808", dark:"#0d0d0d", card:"#111111",
   border:"#1c1c1c", border2:"#252525",
   gold:"#c9a84c", goldL:"#e2c97e", goldD:"#8a6f2e", goldXD:"#4a3a15",
-  cream:"#f4ead5", muted:"#4a4a4a", muted2:"#666", white:"#f5f3ee",
+  cream:"#f5eedc", muted:"#a8a59d", muted2:"#c8c5bc", white:"#f5f3ee",
 };
 
 /* ══ CSS Global ══════════════════════════════════════════════════════ */
