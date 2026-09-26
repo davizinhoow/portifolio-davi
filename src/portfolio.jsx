@@ -167,6 +167,20 @@ input,textarea{font-family:'Cormorant Garamond',serif;outline:none;}
 .svc-cta:hover{background:${T.gold};color:${T.black};box-shadow:0 10px 36px -12px ${T.gold}88;}
 .svc-cta .svc-arr{transition:transform .35s;}
 .svc-cta:hover .svc-arr{transform:translate(3px,-3px);}
+
+/* ── mobile (< 768px): toque nativo, sem cursor customizado ── */
+.m-burger{display:none;}
+.m-menu{display:none;}
+@media (max-width:767px){
+  body,a,button,.lang-btn,.tbtn,.cbtn,.sbtn{cursor:auto;}
+  a,button,[data-h]{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  #cur-dot,#cur-ring{display:none;}
+  .m-burger{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border:1px solid ${T.border};background:transparent;color:${T.gold};}
+  .m-menu{display:flex;flex-direction:column;position:fixed;top:66px;left:0;right:0;background:${T.dark}f7;backdrop-filter:blur(20px);border-bottom:1px solid ${T.border};padding:8px 20px 20px;z-index:199;transition:opacity .35s,transform .35s cubic-bezier(.16,1,.3,1);}
+  .m-menu button{display:flex;justify-content:space-between;align-items:center;background:none;border:none;border-bottom:1px solid ${T.border};padding:18px 0;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:${T.muted};text-align:left;}
+  .m-menu button.sel{color:${T.gold};}
+  .svc-cta{justify-content:center;width:100%;padding:18px 20px;}
+}
 `;
 
 /* ══ SMOOTH NAV GLOBAL & TIMELINE DO SCROLL ══════════════════════════════ */
@@ -217,7 +231,7 @@ function scrollToSection(id, durationMs = 600) {
 
   if (id === "hero") {
     targetY = 0;
-  } else if (Object.prototype.hasOwnProperty.call(SECTION_SCROLL_MAP, id)) {
+  } else if (window.innerWidth >= MOBILE_BP && Object.prototype.hasOwnProperty.call(SECTION_SCROLL_MAP, id)) {
     const bio = document.getElementById("bio");
     if (!bio) return;
 
@@ -229,9 +243,10 @@ function scrollToSection(id, durationMs = 600) {
     targetY = bioAbsoluteTop + maxScroll * sectionProgress;
   } else {
     // Fallback para IDs comuns fora do mapa virtual
+    // No mobile as seções são empilhadas: rola até o elemento real, descontando a nav fixa.
     const el = document.getElementById(id);
     if (!el) return;
-    targetY = el.getBoundingClientRect().top + window.scrollY;
+    targetY = el.getBoundingClientRect().top + window.scrollY - (window.innerWidth < MOBILE_BP ? 64 : 0);
   }
 
   // Clampa no range real do documento
@@ -346,6 +361,35 @@ function useScrollProgress() {
   }, []);
 }
 
+/**
+ * useIsMobile: Detector de Celular
+ * O que faz: Diz se a tela é menor que o breakpoint (768px). No celular o site troca a esteira cinemática
+ * de 3100vh por uma rolagem vertical natural, com as seções empilhadas.
+ */
+const MOBILE_BP = 768;
+function useIsMobile(breakpoint = MOBILE_BP) {
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < breakpoint);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => window.removeEventListener("resize", handleResize);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+/**
+ * Componente: Reveal (Entrada suave no mobile)
+ * O que faz: Faz o bloco subir e aparecer quando entra na tela. Substitui as animações atreladas ao scroll virtual.
+ */
+function Reveal({ children, delay = 0, style = {} }) {
+  const [ref, vis] = useInView(0.12);
+  return (
+    <div ref={ref} style={{ ...style, opacity: vis ? 1 : 0, transform: vis ? "translateY(0)" : "translateY(32px)", transition: `opacity .8s ${delay}s cubic-bezier(.16,1,.3,1), transform .8s ${delay}s cubic-bezier(.16,1,.3,1)` }}>
+      {children}
+    </div>
+  );
+}
+
 function useNotebook() {
   const [nb, setNb] = useState(() => window.innerWidth <= 1440);
   useEffect(() => {
@@ -453,6 +497,21 @@ const DownloadIcon = (props) => (
     <path d="M12 3v12" />
     <polyline points="7 10 12 15 17 10" />
     <path d="M5 21h14" />
+  </LineIcon>
+);
+
+const MenuIcon = (props) => (
+  <LineIcon strokeWidth="2" {...props}>
+    <path d="M4 7h16" />
+    <path d="M4 12h16" />
+    <path d="M10 17h10" />
+  </LineIcon>
+);
+
+const CloseIcon = (props) => (
+  <LineIcon strokeWidth="2" {...props}>
+    <path d="M6 6l12 12" />
+    <path d="M18 6L6 18" />
   </LineIcon>
 );
 
@@ -689,7 +748,9 @@ function TypeDirector({ lang, children }) {
     jobs.forEach(job => {
       const el = job.el();
       const panel = el?.closest("[data-panel]")?.dataset.panel;
-      const visible = panel === "nav" || panel === active || (panel === "footer" && onScreen(el));
+      // No mobile não há painéis sobrepostos: anima tudo o que estiver visível na tela.
+      const mobile = window.innerWidth < MOBILE_BP;
+      const visible = panel === "nav" || (mobile ? !!el && onScreen(el) : panel === active || (panel === "footer" && onScreen(el)));
       if (!reduce && el && visible) animated.push(job); else job.snap();
     });
     if (!animated.length) return;
@@ -840,12 +901,25 @@ function Nav() {
   const [active, setActive] = useState("hero");
   const { scrollToSection } = useSmoothNav();
   const nb = useNotebook();
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
   const { lang, setLang, t } = useLang();
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 60);
-      
+
+      // Mobile: seções empilhadas, a ativa é a última cujo topo passou da metade da tela.
+      if (window.innerWidth < MOBILE_BP) {
+        let cur = "hero";
+        for (const id of ["bio", "trajetoria", "servicos", "contatos"]) {
+          const el = document.getElementById(id);
+          if (el && el.getBoundingClientRect().top < window.innerHeight / 2) cur = id;
+        }
+        setActive(cur);
+        return;
+      }
+
       const bio = document.getElementById("bio");
       if (!bio) return;
 
@@ -880,8 +954,11 @@ function Nav() {
   }, []);
 
   const go = (id) => {
+    setMenuOpen(false);
     scrollToSection(id);
   };
+
+  useEffect(() => { if (!isMobile) setMenuOpen(false); }, [isMobile]);
 
   const links = ["bio", "trajetoria", "servicos", "contatos"].map(id => ({ id, label: t.nav[id] }));
 
@@ -895,21 +972,23 @@ function Nav() {
     ind.style.transition = first ? "none" : "transform .45s cubic-bezier(.77,0,.18,1), width .45s cubic-bezier(.77,0,.18,1)";
     ind.style.width = btn.offsetWidth + "px";
     ind.style.transform = `translateX(${btn.offsetLeft}px)`;
-  }, [lang]);
+  }, [lang, isMobile]);
+
+  const solid = scrolled || menuOpen;
 
   return (
-    <nav data-panel="nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding: nb ? "14px 28px" : "16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:scrolled?`${T.dark}f2`:"transparent", backdropFilter:scrolled?"blur(20px)":"none", borderBottom:`1px solid ${scrolled?T.border:"transparent"}`, transition:"all .5s" }}>
+    <nav data-panel="nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding: isMobile ? "14px 20px" : nb ? "14px 28px" : "16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:solid?`${T.dark}f2`:"transparent", backdropFilter:solid?"blur(20px)":"none", borderBottom:`1px solid ${solid?T.border:"transparent"}`, transition:"all .5s" }}>
       <button data-h onClick={() => go("hero")} style={{ background:"none", border:"none", cursor:"none", fontFamily:"'Bebas Neue',sans-serif", fontSize:20, letterSpacing:"0.15em" }}>
         <span className="gold-text">Davi</span><span style={{ color:T.white }}>Freitas</span>
       </button>
-      <div style={{ display:"flex", gap: nb ? 20 : 32, alignItems:"center" }}>
-        {links.map(l => (
+      <div style={{ display:"flex", gap: isMobile ? 10 : nb ? 20 : 32, alignItems:"center" }}>
+        {!isMobile && links.map(l => (
           <button key={l.id} data-h onClick={() => go(l.id)} style={{ background:"none", border:"none", cursor:"none", fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.25em", textTransform:"uppercase", color:active===l.id?T.gold:T.muted, transition:"color .3s", position:"relative", padding:"4px 0" }}>
             <TText text={l.label} />
             <span style={{ position:"absolute", bottom:0, left:0, right:0, height:"1px", background:T.gold, transformOrigin:"left", transform:active===l.id?"scaleX(1)":"scaleX(0)", transition:"transform .4s cubic-bezier(.77,0,.18,1)" }} />
           </button>
         ))}
-        <div style={{ width:1, height:18, background:T.border2 }} />
+        {!isMobile && <div style={{ width:1, height:18, background:T.border2 }} />}
         <div className="lang-sw" role="group" aria-label="Idioma / Language">
           {["pt", "en"].map((code, i) => (
             <span key={code} style={{ display:"inline-flex", alignItems:"center", gap:8 }}>
@@ -921,18 +1000,49 @@ function Nav() {
           ))}
           <span ref={langInd} className="lang-ind" />
         </div>
-        <a
-          data-h
-          className="nav-cv"
-          href={CV_URLS[lang] || CV_URLS.pt}
-          download={lang === "en" ? "Resume_Davi_Freitas_EN.pdf" : "Curriculo_Davi_Freitas.pdf"}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <DownloadIcon size={12} color="currentColor" strokeWidth="2" />
-          <TText text={t.nav.cv} />
-        </a>
+        {!isMobile && (
+          <a
+            data-h
+            className="nav-cv"
+            href={CV_URLS[lang] || CV_URLS.pt}
+            download={lang === "en" ? "Resume_Davi_Freitas_EN.pdf" : "Curriculo_Davi_Freitas.pdf"}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <DownloadIcon size={12} color="currentColor" strokeWidth="2" />
+            <TText text={t.nav.cv} />
+          </a>
+        )}
+        {isMobile && (
+          <button className="m-burger" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-label="Menu">
+            {menuOpen ? <CloseIcon size={18} color="currentColor" /> : <MenuIcon size={18} color="currentColor" />}
+          </button>
+        )}
       </div>
+
+      {/* Menu mobile: gaveta que desce da nav com os links e o download do CV */}
+      {isMobile && (
+        <div className="m-menu" style={{ opacity: menuOpen ? 1 : 0, transform: menuOpen ? "translateY(0)" : "translateY(-12px)", pointerEvents: menuOpen ? "auto" : "none" }}>
+          {links.map(l => (
+            <button key={l.id} className={active === l.id ? "sel" : ""} onClick={() => go(l.id)}>
+              <TText text={l.label} />
+              <ArrowExternalIcon size={11} color={active === l.id ? T.gold : T.muted} style={{ transform: "rotate(45deg)" }} />
+            </button>
+          ))}
+          <a
+            className="nav-cv"
+            href={CV_URLS[lang] || CV_URLS.pt}
+            download={lang === "en" ? "Resume_Davi_Freitas_EN.pdf" : "Curriculo_Davi_Freitas.pdf"}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setMenuOpen(false)}
+            style={{ justifyContent:"center", marginTop:20, padding:"14px 16px" }}
+          >
+            <DownloadIcon size={12} color="currentColor" strokeWidth="2" />
+            <TText text={t.nav.cv} />
+          </a>
+        </div>
+      )}
     </nav>
   );
 }
@@ -1102,6 +1212,44 @@ function PanelSobre({ p }) {
   const [currentPhoto, setCurrentPhoto] = useState(0);
 
   const containerRef = useRef(null);
+  const lastWheelTime = useRef(0);
+  const dragStart = useRef(null);
+
+  // Scroll horizontal da rodinha ou trackpad
+  const handleWheel = (e) => {
+    const dx = e.deltaX !== 0 ? e.deltaX : (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : 0);
+    if (Math.abs(dx) > 10) {
+      e.preventDefault();
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastWheelTime.current > 350) {
+        lastWheelTime.current = now;
+        if (dx > 0) {
+          setCurrentPhoto(prev => (prev + 1) % mediaItems.length);
+        } else {
+          setCurrentPhoto(prev => (prev === 0 ? mediaItems.length - 1 : prev - 1));
+        }
+      }
+    }
+  };
+
+  // Suporte a arrastar (Drag/Swipe com mouse ou touch)
+  const handlePointerDown = (e) => {
+    dragStart.current = e.clientX;
+  };
+
+  const handlePointerUp = (e) => {
+    if (dragStart.current === null) return;
+    const diff = e.clientX - dragStart.current;
+    if (Math.abs(diff) > 35) {
+      if (diff < 0) {
+        setCurrentPhoto(prev => (prev + 1) % mediaItems.length);
+      } else {
+        setCurrentPhoto(prev => (prev === 0 ? mediaItems.length - 1 : prev - 1));
+      }
+    }
+    dragStart.current = null;
+  };
 
   const t = stageT(p, STAGES.carreira);
   const e = t * t;
@@ -1122,10 +1270,15 @@ function PanelSobre({ p }) {
                 
                 <div 
                   ref={containerRef}
-                  style={{ width: nb ? 340 : 440, height: nb ? 340 : 440, position:'relative', marginBottom: nb ? 20 : 36, zIndex: 2, overflow: "hidden", borderRadius: 14 }}
+                  onWheel={handleWheel}
+                  onPointerDown={handlePointerDown}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={() => { dragStart.current = null; }}
+                  style={{ width: nb ? 340 : 440, height: nb ? 340 : 440, position:'relative', marginBottom: nb ? 20 : 36, zIndex: 2, overflow: "hidden", borderRadius: 14, cursor: "grab", userSelect: "none" }}
                 >
                   {mediaItems.map((media, i) => {
                     const isCurrent = currentPhoto === i;
+                    const offset = i - currentPhoto;
                     const mediaStyle = { 
                       width: '100%', 
                       height: '100%', 
@@ -1137,8 +1290,8 @@ function PanelSobre({ p }) {
                       top: 0,
                       left: 0,
                       opacity: isCurrent ? 1 : 0,
-                      transform: isCurrent ? 'scale(1)' : 'scale(0.94)',
-                      transition: 'opacity 0.6s ease, transform 0.6s ease',
+                      transform: isCurrent ? 'translateX(0) scale(1)' : `translateX(${offset * 100}%) scale(0.92)`,
+                      transition: 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease',
                       pointerEvents: isCurrent ? 'auto' : 'none',
                     };
 
@@ -1150,6 +1303,7 @@ function PanelSobre({ p }) {
                         loop 
                         muted 
                         playsInline
+                        draggable={false}
                         style={mediaStyle} 
                       />
                     ) : (
@@ -1157,6 +1311,7 @@ function PanelSobre({ p }) {
                         key={i}
                         src={media.src} 
                         alt={tx.bio.photoAlt}
+                        draggable={false}
                         style={mediaStyle} 
                       />
                     );
@@ -1167,7 +1322,7 @@ function PanelSobre({ p }) {
                     {mediaItems.map((_, i) => (
                       <div 
                         key={i} 
-                        onClick={() => setCurrentPhoto(i)}
+                        onClick={(e) => { e.stopPropagation(); setCurrentPhoto(i); }}
                         style={{ 
                           width: currentPhoto === i ? 18 : 6, 
                           height: 5, 
