@@ -958,8 +958,6 @@ function Nav() {
     scrollToSection(id);
   };
 
-  useEffect(() => { if (!isMobile) setMenuOpen(false); }, [isMobile]);
-
   const links = ["bio", "trajetoria", "servicos", "contatos"].map(id => ({ id, label: t.nav[id] }));
 
   // Sublinhado dourado que desliza até a sigla ativa (sem transição na montagem, para não "deslizar" ao carregar).
@@ -974,7 +972,7 @@ function Nav() {
     ind.style.transform = `translateX(${btn.offsetLeft}px)`;
   }, [lang, isMobile]);
 
-  const solid = scrolled || menuOpen;
+  const solid = scrolled || (isMobile && menuOpen);
 
   return (
     <nav data-panel="nav" style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, padding: isMobile ? "14px 20px" : nb ? "14px 28px" : "16px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:solid?`${T.dark}f2`:"transparent", backdropFilter:solid?"blur(20px)":"none", borderBottom:`1px solid ${solid?T.border:"transparent"}`, transition:"all .5s" }}>
@@ -1060,6 +1058,7 @@ function Hero() {
   const [mp, setMp] = useState({ x: 0.5, y: 0.5 });
   const [p, setP] = useState(0);
   const nb = useNotebook();
+  const isMobile = useIsMobile();
   const { t: tx } = useLang();
 
   useEffect(() => {
@@ -1095,7 +1094,8 @@ function Hero() {
     return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(af); };
   }, []);
 
-  const t = Math.min(p / 0.8, 1); // Hero finishes animating slightly before section end
+  // No mobile o Hero é uma tela única e estática (sem a dispersão atrelada ao scroll).
+  const t = isMobile ? 0 : Math.min(p / 0.8, 1); // Hero finishes animating slightly before section end
   const e = t * t * t; // Curva suavizada
 
   const mag = (dx, dy, s=16) => ({
@@ -1104,15 +1104,15 @@ function Hero() {
   });
 
   return (
-    <div id="hero" data-panel="hero" ref={ref} style={{ height: "300vh", position: "relative" }}>
-      <div style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "safe center", padding: nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
+    <div id="hero" data-panel="hero" ref={ref} style={{ height: isMobile ? "auto" : "300vh", position: "relative" }}>
+      <div style={{ position: isMobile ? "relative" : "sticky", top: 0, height: isMobile ? "auto" : "100vh", minHeight: isMobile ? "100svh" : undefined, overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "safe center", padding: isMobile ? "96px 20px 88px" : nb ? "72px 32px 64px" : "120px 48px 100px", background: T.black }}>
         
         <div style={{ position:"absolute", inset:"-20%", backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`, backgroundSize:"80px 80px", opacity:.28, transform: `translateY(${e * 800}px)` }} />
         <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 52% 62% at ${mp.x*100}% ${mp.y*100}%,${T.goldD}26 0%,transparent 65%)`, transition:"background .7s ease", pointerEvents:"none", opacity: Math.max(0, 1 - t*2) }} />
 
         {/* número decorativo */}
         <div style={{ position:"absolute", right:-20, top:"50%", transform: `translate(${e*1500}px, ${-e*800}px) rotate(${e*45}deg)`, opacity: Math.max(0, 1 - t*1.5), zIndex: 0 }}>
-          <div style={{ ...mag(1,.5,10), fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(180px,32vw,400px)", lineHeight:1, color:T.border, userSelect:"none", pointerEvents:"none", letterSpacing:"-0.04em", opacity:vis?1:0, transition:"opacity 1.1s .3s, transform .9s cubic-bezier(.16,1,.3,1)" }}>
+          <div style={{ ...mag(1,.5,10), fontFamily:"'Bebas Neue',sans-serif", fontSize: isMobile ? "58vw" : "clamp(180px,32vw,400px)", lineHeight:1, color:T.border, userSelect:"none", pointerEvents:"none", letterSpacing:"-0.04em", opacity:vis?1:0, transition:"opacity 1.1s .3s, transform .9s cubic-bezier(.16,1,.3,1)" }}>
             {String(count).padStart(3,"0")}
           </div>
         </div>
@@ -1127,14 +1127,14 @@ function Hero() {
         <div style={{ position:"relative", maxWidth:960, zIndex: 10, pointerEvents: t > 0.5 ? "none" : "auto" }}>
           
           <div style={{ transform: `translate(${-e * 1000}px, ${-e * 400}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:12, border:`1px solid ${T.border}`, padding:"8px 18px", marginBottom:36, background:`${T.goldXD}28`, opacity:vis?1:0, transition:"opacity .6s .15s" }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:12, border:`1px solid ${T.border}`, padding: isMobile ? "7px 14px" : "8px 18px", marginBottom: isMobile ? 28 : 36, background:`${T.goldXD}28`, opacity:vis?1:0, transition:"opacity .6s .15s" }}>
               <span style={{ width:6, height:6, borderRadius:"50%", background:T.gold, animation:"goldPulse 2.2s infinite" }} />
-              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, letterSpacing:"0.4em", color:T.gold, textTransform:"uppercase" }}>{tx.hero.badge}</span>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize: isMobile ? 9 : 10, letterSpacing: isMobile ? "0.28em" : "0.4em", color:T.gold, textTransform:"uppercase" }}>{tx.hero.badge}</span>
             </div>
           </div>
 
           {/* Limitado também pela altura (vh) para não estourar a tela em monitores baixos e subir por baixo do nav */}
-          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(56px,min(13vw,15vh),156px)", lineHeight:.88, letterSpacing:"0.02em" }}>
+          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: isMobile ? "clamp(52px,17vw,96px)" : "clamp(56px,min(13vw,15vh),156px)", lineHeight:.88, letterSpacing:"0.02em" }}>
             {[{t:"INTELLIGENT",g:false,d:".28s"},{t:"SYSTEMS",g:true,d:".48s"},{t:"ENGINEERING",g:false,d:".68s"}].map(({t,g,d}, i) => (
               <div key={t} style={{ overflow:"hidden" }}>
                 <div style={{ transform: `translate(${-e * (1200 + i*400)}px, ${-e * (200 + i*150)}px) rotate(${-e * (i * 3)}deg)`, opacity: Math.max(0, 1 - t*1.2) }}>
@@ -1147,7 +1147,7 @@ function Hero() {
           </h1>
 
           <div style={{ transform: `translate(${e * 1200}px, ${e * 300}px)`, opacity: Math.max(0, 1 - t*1.5) }}>
-            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"clamp(17px,2vw,22px)", fontWeight:300, fontStyle:"italic", color:T.cream, lineHeight:1.8, maxWidth:500, marginTop:36, marginBottom:52, opacity:vis?1:0, transition:"opacity .8s 1.05s" }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"clamp(17px,2vw,22px)", fontWeight:300, fontStyle:"italic", color:T.cream, lineHeight: isMobile ? 1.65 : 1.8, maxWidth:500, marginTop: isMobile ? 28 : 36, marginBottom: isMobile ? 0 : 52, opacity:vis?1:0, transition:"opacity .8s 1.05s" }}>
               <TText text={tx.hero.sub} />
             </p>
           </div>
@@ -1204,9 +1204,9 @@ function PhotoDot({ active, onClick }) {
  * Ele some flutuando suavemente pra cima/esquerda pra dar lugar a seção da "Carreira".
  * @param {number} p - O pulso de rolagem (de 0 a 1) passado pelo motorzão do "BioSection".
  */
-function PanelSobre({ p }) {
+function PanelSobre({ p, mobile = false }) {
   const nb = useNotebook();
-  const imgRef = useParallax(0.08);
+  const imgRef = useParallax(mobile ? 0 : 0.08);
   const { t: tx } = useLang();
   const mediaItems = MEDIA_ITEMS;
   const [currentPhoto, setCurrentPhoto] = useState(0);
@@ -1251,18 +1251,18 @@ function PanelSobre({ p }) {
     dragStart.current = null;
   };
 
-  const t = stageT(p, STAGES.carreira);
+  const t = mobile ? 0 : stageT(p, STAGES.carreira);
   const e = t * t;
-  const isGone = p > STAGES.carreira + 0.16;
+  const isGone = !mobile && p > STAGES.carreira + 0.16;
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "50px 32px 40px" : "100px 48px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1.15fr", gap: nb ? 64 : 120, alignItems:"center", maxWidth:1440, width:"100%", margin:"auto" }}>
+    <div data-panel={mobile ? "sobre" : undefined} style={{ position: mobile ? "relative" : "absolute", inset: mobile ? undefined : 0, background: T.black, display:"flex", alignItems:"center", justifyContent:"center", padding: mobile ? "72px 20px" : nb ? "50px 32px 40px" : "100px 48px", pointerEvents: isGone ? "none" : "auto", zIndex: isGone ? 0 : 10 }}>
+      <div style={{ display:"grid", gridTemplateColumns: mobile ? "1fr" : "1fr 1.15fr", gap: mobile ? 48 : nb ? 64 : 120, alignItems:"center", maxWidth:1440, width:"100%", margin:"auto" }}>
 
         {/* foto: voa pra esquerda e pra baixo fugindo e rotacionando */}
         <div style={{ transform: `translate(${-e * 400}px, ${e * 200}px) rotate(${-e * 10}deg) scale(${1 - e * 0.1})`, opacity: Math.max(0, 1 - t*1.5) }}>
           <SecLabel num="01" label={tx.bio.label} />
-          <div style={{ width:"100%", paddingBottom: nb ? "120%" : "128%", position:"relative", overflow:"hidden", border:`1px solid ${T.border}` }}>
+          <div style={{ width:"100%", paddingBottom: mobile ? "132%" : nb ? "120%" : "128%", position:"relative", overflow:"hidden", border:`1px solid ${T.border}` }}>
             <div ref={imgRef} style={{ position:"absolute", inset:"-10%", background:T.card }}>
               <div style={{ position:"absolute", inset:0, backgroundImage:`linear-gradient(${T.border2} 1px,transparent 1px),linear-gradient(90deg,${T.border2} 1px,transparent 1px)`, backgroundSize:"28px 28px", opacity:.7 }} />
               <div style={{ position:"absolute", inset:0, background:`radial-gradient(ellipse 65% 65% at 50% 65%,${T.goldD}35,transparent)` }} />
@@ -1274,7 +1274,7 @@ function PanelSobre({ p }) {
                   onPointerDown={handlePointerDown}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={() => { dragStart.current = null; }}
-                  style={{ width: nb ? 340 : 440, height: nb ? 340 : 440, position:'relative', marginBottom: nb ? 20 : 36, zIndex: 2, overflow: "hidden", borderRadius: 14, cursor: "grab", userSelect: "none" }}
+                  style={{ width: mobile ? "68vw" : nb ? 340 : 440, height: mobile ? "68vw" : nb ? 340 : 440, maxWidth: mobile ? 320 : undefined, maxHeight: mobile ? 320 : undefined, position:'relative', marginBottom: mobile ? 16 : nb ? 20 : 36, zIndex: 2, overflow: "hidden", borderRadius: 14, cursor: "grab", userSelect: "none" }}
                 >
                   {mediaItems.map((media, i) => {
                     const isCurrent = currentPhoto === i;
@@ -1336,7 +1336,7 @@ function PanelSobre({ p }) {
                   </div>
                 </div>
 
-                <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 68 : 96, lineHeight:1, letterSpacing:".08em" }}>Davi Freitas</span>
+                <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: mobile ? 46 : nb ? 68 : 96, lineHeight:1, letterSpacing:".08em" }}>Davi Freitas</span>
                 <span style={{ fontFamily:"'DM Mono',monospace", fontSize:11, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}>davizinhoow</span>
               </div>
               {[{top:14,left:14},{top:14,right:14},{bottom:14,left:14},{bottom:14,right:14}].map((s,i)=>(
@@ -1349,12 +1349,12 @@ function PanelSobre({ p }) {
         {/* texto: voam pela direita se dispersando */}
         <div style={{ display:"flex", flexDirection:"column" }}>
           <div style={{ transform: `translate(${e * 400}px, ${-e * 50}px)`, opacity: Math.max(0, 1 - t*1.2) }}>
-            <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(46px,6.2vw,92px)", lineHeight:.9, color:T.white, marginBottom: nb ? 22 : 32 }}>
+            <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: mobile ? "clamp(40px,12vw,64px)" : "clamp(46px,6.2vw,92px)", lineHeight:.9, color:T.white, marginBottom: nb ? 22 : 32 }}>
               <TText text={tx.bio.title[0]} /><br /><span className="gold-text"><TText text={tx.bio.title[1]} /></span><br /><TText text={tx.bio.title[2]} />
             </h2>
           </div>
           <div style={{ transform: `translate(${e * 500}px, ${e * 20}px)`, opacity: Math.max(0, 1 - t*1.4) }}>
-            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 20 : 23, fontWeight:300, lineHeight:1.75, color:T.cream, marginBottom: nb ? 16 : 22 }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: mobile ? 19 : nb ? 20 : 23, fontWeight:300, lineHeight:1.75, color:T.cream, marginBottom: nb ? 16 : 22 }}>
               <TText text={tx.bio.p1} />
             </p>
           </div>
@@ -1363,7 +1363,7 @@ function PanelSobre({ p }) {
               <TText text={tx.bio.p2} />
             </p>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, marginTop: nb ? 36 : 56, border:`1px solid ${T.border}`, transform: `translate(${e * 700}px, ${e * 100}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, marginTop: mobile ? 32 : nb ? 36 : 56, border:`1px solid ${T.border}`, transform: `translate(${e * 700}px, ${e * 100}px)`, opacity: Math.max(0, 1 - t*1.8) }}>
             {tx.bio.metrics.map((m,i)=>(
               <MetricCard key={i} v={m.v} l={<TText text={m.l} />} last={i===2} />
             ))}
@@ -1407,7 +1407,7 @@ const CAREER = [
  * @param {number} animP - Animação de Entrada.
  * @param {number} leaveP - Animação de Saída.
  */
-function CareerItem({ item, index, animP, leaveP = 0 }) {
+function CareerItem({ item, index, animP, leaveP = 0, mobile = false }) {
   const [hov, setHov] = useState(false);
   const { lang } = useLang();
   
@@ -1423,25 +1423,25 @@ function CareerItem({ item, index, animP, leaveP = 0 }) {
 
   return (
     <div
-      style={{ display:"grid", gridTemplateColumns:"80px 1fr", borderBottom:`1px solid ${T.border}`, position:"relative", transform:`translate(${flyX}px, ${offset + flyY}px) rotate(${rotate}deg)`, opacity: Math.min(1, op) }}
+      style={{ display:"grid", gridTemplateColumns: mobile ? "58px 1fr" : "80px 1fr", borderBottom:`1px solid ${T.border}`, position:"relative", transform:`translate(${flyX}px, ${offset + flyY}px) rotate(${rotate}deg)`, opacity: Math.min(1, op) }}
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
     >
       <div style={{ position:"absolute", left:0, top:0, bottom:0, width:2, background:`linear-gradient(to bottom,transparent,${T.gold},transparent)`, opacity:hov?1:0, transition:"opacity .4s" }} />
       <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(to right,${T.gold},transparent)`, opacity:hov?.5:0, transition:"opacity .4s" }} />
 
-      <div style={{ padding:"28px 0 28px 14px", borderRight:`1px solid ${hov?T.goldD:T.border}`, transition:"border-color .3s", display:"flex", alignItems:"flex-start" }}>
-        <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:34, lineHeight:1, color:hov?T.gold:T.muted, transition:"color .3s" }}>{item.year}</span>
+      <div style={{ padding: mobile ? "24px 0 24px 4px" : "28px 0 28px 14px", borderRight:`1px solid ${hov?T.goldD:T.border}`, transition:"border-color .3s", display:"flex", alignItems:"flex-start" }}>
+        <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: mobile ? 26 : 34, lineHeight:1, color:hov?T.gold:T.muted, transition:"color .3s" }}>{item.year}</span>
       </div>
 
-      <div style={{ padding:"28px 0 28px 32px" }}>
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6, gap:12 }}>
+      <div style={{ padding: mobile ? "24px 0 24px 16px" : "28px 0 28px 32px" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6, gap:12, flexDirection: mobile ? "column" : "row" }}>
           <div>
             <h3 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:20, fontWeight:700, color:hov?T.goldL:T.white, transition:"color .3s", marginBottom:3 }}>{item.role}</h3>
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.gold, textTransform:"uppercase" }}>{item.company}</span>
           </div>
           <span style={{ fontFamily:"'DM Mono',monospace", fontSize:8, color:T.muted, border:`1px solid ${T.border}`, padding:"3px 8px", textTransform:"uppercase", flexShrink:0 }}><TText text={tr(item.type, lang)} /></span>
         </div>
-        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontWeight:300, color:T.muted, lineHeight:1.65, marginBottom:12 }}><TText text={tr(item.desc, lang)} /></p>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: mobile ? 16 : 15, fontWeight:300, color:T.muted, lineHeight:1.65, marginBottom:12 }}><TText text={tr(item.desc, lang)} /></p>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
           {item.tags.map(t => (
             <span key={t} style={{ fontFamily:"'DM Mono',monospace", fontSize:8, letterSpacing:"0.12em", textTransform:"uppercase", color:hov?T.gold:T.muted, border:`1px solid ${hov?T.goldD:T.border}`, padding:"2px 8px", transition:"all .3s" }}>{t}</span>
@@ -1457,25 +1457,25 @@ function CareerItem({ item, index, animP, leaveP = 0 }) {
  * O que faz: É o painel escuro no centro que desce sobre o "Sobre" com a lista do histórico de trabalho.
  * @param {number} p - O pulso progressivo geral (0 a 1) vindo do contêiner mestre BioSection.
  */
-function PanelCarreira({ p }) {
+function PanelCarreira({ p, mobile = false }) {
   const nb = useNotebook();
   const { t: tx } = useLang();
   // LÓGICA DE TEMPO:
   // stageT confina os valores sempre em escalas seguras de 0 a 1.
   // (p - X) descobre quanto já desceu além do marco X. (/ STAGE_DUR) define a lentidão deste processo.
-  const enterT = stageT(p, STAGES.carreira); // Entra no marco da carreira
-  const leaveT = stageT(p, STAGES.projetos); // Sai quando os projetos entram
+  const enterT = mobile ? 1 : stageT(p, STAGES.carreira); // Entra no marco da carreira
+  const leaveT = mobile ? 0 : stageT(p, STAGES.projetos); // Sai quando os projetos entram
   
   const eIn = enterT * enterT; 
   const eOut = leaveT * leaveT * leaveT; // Curva suavizada
 
   return (
-    <div data-panel="carreira" style={{ position: "absolute", inset: 0, background: T.dark, display:"flex", alignItems:"center", justifyContent:"center", padding: nb ? "60px 24px" : "100px 40px", pointerEvents: enterT > 0 && leaveT < 1 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 50%)`, zIndex: 20 }}>
+    <div data-panel="carreira" style={{ position: mobile ? "relative" : "absolute", inset: mobile ? undefined : 0, background: T.dark, display:"flex", alignItems:"center", justifyContent:"center", padding: mobile ? "72px 20px" : nb ? "60px 24px" : "100px 40px", pointerEvents: enterT > 0 && leaveT < 1 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: mobile ? "none" : `circle(${eIn * 150}% at 50% 50%)`, zIndex: 20 }}>
       {/* Se quiser permitir scroll interno desse box enquanto rola a página não rola, mas em tela cheia cabe assim. O wrap tem auto. */}
       <div style={{ maxWidth:860, width:"100%", margin:"auto" }}>
         
         {/* Header da carreira desce teto e foge pela esquerda rotacionando */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:52, flexWrap:"wrap", gap:16, transform:`translate(${-eOut * 200}px, ${(1 - eIn) * -100 - eOut * 100}px) rotate(${-eOut * 15}deg)`, opacity: eIn * Math.max(0, 1 - eOut * 1.5) }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom: mobile ? 36 : 52, flexWrap:"wrap", gap:16, transform:`translate(${-eOut * 200}px, ${(1 - eIn) * -100 - eOut * 100}px) rotate(${-eOut * 15}deg)`, opacity: eIn * Math.max(0, 1 - eOut * 1.5) }}>
           <div>
             <SecLabel num="02" label={tx.career.label} />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,76px)", lineHeight:.9, color:T.white }}>
@@ -1488,7 +1488,9 @@ function PanelCarreira({ p }) {
         </div>
 
         <div style={{ borderTop:`1px solid ${T.border}` }}>
-          {CAREER.map((item, i) => <CareerItem key={i} item={item} index={i} animP={eIn} leaveP={eOut} />)}
+          {CAREER.map((item, i) => mobile
+            ? <Reveal key={i} delay={i * 0.08}><CareerItem item={item} index={i} animP={1} mobile /></Reveal>
+            : <CareerItem key={i} item={item} index={i} animP={eIn} leaveP={eOut} />)}
         </div>
       </div>
     </div>
@@ -1558,7 +1560,7 @@ const PROJECTS = [
  * Componente: ProjectCard (Caixa de Projeto)
  * O que faz: É a caixinha individual brilhosa de cada projeto no portfolio. Ele tem uma matemática específica para "voar" e sumir dependendo se é par ou ímpar.
  */
-function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
+function ProjectCard({ p, idx, animP = 1, leaveP = 0, mobile = false }) {
   const [hov, setHov] = useState(false);
   const { lang, t: tx } = useLang();
   
@@ -1581,7 +1583,7 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
       onMouseEnter={()=>setHov(true)} 
       onMouseLeave={()=>setHov(false)}
       onClick={() => { if(p.link && p.link !== "#") window.open(p.link, "_blank"); }}
-      style={{ gridColumn:p.large?"span 2":"span 1", padding:p.large?"52px":"40px", border:`1px solid ${hov?T.gold:T.border}`, background:hov?`${T.goldD}0e`:T.card, cursor:p.link && p.link !== "#"?"pointer":"default", position:"relative", overflow:"hidden", transition:"border-color .4s,background .4s", opacity, transform }}>
+      style={{ gridColumn: mobile ? "span 1" : p.large?"span 2":"span 1", padding: mobile ? "30px 22px" : p.large?"52px":"40px", border:`1px solid ${hov?T.gold:T.border}`, background:hov?`${T.goldD}0e`:T.card, cursor:p.link && p.link !== "#"?"pointer":"default", position:"relative", overflow:"hidden", transition:"border-color .4s,background .4s", opacity, transform }}>
       <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg,transparent,${hov?T.gold:T.goldD}55,transparent)`, transformOrigin:"left", transform:hov?"scaleX(1)":"scaleX(.3)", transition:"transform .55s" }} />
       <div style={{ position:"absolute", inset:0, opacity:hov?1:0, background:`radial-gradient(ellipse 60% 60% at 25% 40%,${T.goldD}10,transparent)`, transition:"opacity .6s", pointerEvents:"none" }} />
       <GoldParticles active={hov} />
@@ -1597,13 +1599,13 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
         </div>
         <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, color:T.muted }}>{p.year}</span>
       </div>
-      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:p.large?"clamp(36px,5vw,62px)":"clamp(28px,3.5vw,44px)", lineHeight:.9, color:hov?T.goldL:T.white, marginBottom:16, transition:"color .35s", position:"relative" }}>{p.title}</h3>
+      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: mobile ? (p.large ? 36 : 32) : p.large?"clamp(36px,5vw,62px)":"clamp(28px,3.5vw,44px)", lineHeight:.9, color:hov?T.goldL:T.white, marginBottom:16, transition:"color .35s", position:"relative" }}>{p.title}</h3>
       <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:17, fontWeight:300, color:T.muted, lineHeight:1.7, marginBottom:28, maxWidth:p.large?580:"100%", position:"relative" }}><TText text={tr(p.desc, lang)} /></p>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", position:"relative" }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems: mobile ? "flex-start" : "flex-end", flexDirection: mobile ? "column" : "row", gap: mobile ? 20 : 0, position:"relative" }}>
         <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
           {p.tags.map(t=><span key={t} style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.12em", textTransform:"uppercase", color:hov?T.gold:T.muted, border:`1px solid ${hov?T.goldD:T.border}`, padding:"4px 12px", transition:"all .3s" }}>{t}</span>)}
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8, opacity:hov?1:0, transform:hov?"translate(0,0)":"translate(-12px,8px)", transition:"all .4s" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, opacity:hov||mobile?1:0, transform:hov||mobile?"translate(0,0)":"translate(-12px,8px)", transition:"all .4s" }}>
           <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", textTransform:"uppercase", color:T.gold }}>
             <TText text={p.link && p.link !== "#" ? tx.projects.view : (p.status || tx.projects.soon)} />
           </span>
@@ -1623,22 +1625,22 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0 }) {
  * O que faz: É a listagem de cards dos seus trabalhos. Ela brota feito um círculo crescendo do centro quando o scroll chega nos ~52%.
  * @param {number} p - Progresso da página ('porcentagem' do scroll que define o andamento das animações).
  */
-function PanelProjetos({ p }) {
+function PanelProjetos({ p, mobile = false }) {
   const nb = useNotebook();
   const { t: tx } = useLang();
   // LÓGICA DE TEMPO IDÊNTICA
-  const enterT = stageT(p, STAGES.projetos);
-  const leaveT = stageT(p, STAGES.skills);
+  const enterT = mobile ? 1 : stageT(p, STAGES.projetos);
+  const leaveT = mobile ? 0 : stageT(p, STAGES.skills);
 
   const eIn = enterT * enterT * enterT; 
   const eOut = leaveT * leaveT * leaveT; // Curva bezier para animar saída mais dramática
 
   return (
-    <div data-panel="projetos" style={{ position: "absolute", inset: 0, background: T.black, padding: nb ? "60px 32px" : "100px 48px", overflowY: "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: `circle(${eIn * 150}% at 50% 100%)`, zIndex: 30, display:"flex", alignItems:"center" }}>
+    <div data-panel="projetos" style={{ position: mobile ? "relative" : "absolute", inset: mobile ? undefined : 0, background: T.black, padding: mobile ? "72px 20px" : nb ? "60px 32px" : "100px 48px", overflowY: mobile ? "visible" : "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: mobile ? "none" : `circle(${eIn * 150}% at 50% 100%)`, zIndex: 30, display:"flex", alignItems:"center" }}>
       <div style={{ maxWidth:1200, width:"100%", margin:"auto" }}>
         
         {/* Título foge também pra esquerda na saída */}
-        <div className="projetos-title" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:60, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, 0) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
+        <div className="projetos-title" style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom: mobile ? 36 : 60, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, 0) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
           <div>
             <SecLabel num="03" label={tx.projects.label} />
             <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(48px,7vw,80px)", lineHeight:.9, color:T.white, transform:`translateY(${(1 - eIn) * 30}px)` }}>
@@ -1647,8 +1649,10 @@ function PanelProjetos({ p }) {
           </div>
           <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:15, fontStyle:"italic", color:T.muted, maxWidth:200, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}><TText text={tx.projects.note} /></p>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:2 }}>
-          {PROJECTS.map((proj,i) => <ProjectCard key={i} p={proj} idx={i} animP={eIn} leaveP={eOut} />)}
+        <div style={{ display:"grid", gridTemplateColumns: mobile ? "1fr" : "repeat(2,1fr)", gap: mobile ? 12 : 2 }}>
+          {PROJECTS.map((proj,i) => mobile
+            ? <Reveal key={i}><ProjectCard p={proj} idx={i} mobile /></Reveal>
+            : <ProjectCard key={i} p={proj} idx={i} animP={eIn} leaveP={eOut} />)}
         </div>
       </div>
     </div>
@@ -1668,7 +1672,7 @@ const SERVICE_TAGS = [
  * O que faz: Card de cada serviço, no mesmo padrão dos projetos (borda dourada e partículas no hover).
  * Entra de baixo em escadinha e, na saída, o primeiro foge pra esquerda, o do meio sobe e o último vai pra direita.
  */
-function ServiceCard({ s, tags, idx, animP, leaveP }) {
+function ServiceCard({ s, tags, idx, animP, leaveP, mobile = false }) {
   const [hov, setHov] = useState(false);
   const nb = useNotebook();
   const Icon = SERVICE_ICONS[idx];
@@ -1684,7 +1688,7 @@ function ServiceCard({ s, tags, idx, animP, leaveP }) {
     <div data-h
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      style={{ padding: nb ? "22px 22px" : "34px 28px", border:`1px solid ${hov?T.gold:T.border}`, background:hov?`${T.goldD}0e`:T.card, position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", transition:"border-color .4s,background .4s", opacity:Math.min(1, opacity), transform:`translate(${outX}px, ${inY + outY}px) rotate(${rotate}deg)` }}>
+      style={{ padding: mobile ? "26px 22px" : nb ? "22px 22px" : "34px 28px", border:`1px solid ${hov?T.gold:T.border}`, background:hov?`${T.goldD}0e`:T.card, position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", transition:"border-color .4s,background .4s", opacity:Math.min(1, opacity), transform:`translate(${outX}px, ${inY + outY}px) rotate(${rotate}deg)` }}>
       <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg,transparent,${hov?T.gold:T.goldD}55,transparent)`, transformOrigin:"left", transform:hov?"scaleX(1)":"scaleX(.3)", transition:"transform .55s" }} />
       <div style={{ position:"absolute", inset:0, opacity:hov?1:0, background:`radial-gradient(ellipse 70% 60% at 30% 20%,${T.goldD}14,transparent)`, transition:"opacity .6s", pointerEvents:"none" }} />
       <GoldParticles active={hov} />
@@ -1697,8 +1701,8 @@ function ServiceCard({ s, tags, idx, animP, leaveP }) {
       </div>
 
       <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.2em", color:T.gold, textTransform:"uppercase", marginBottom:10, position:"relative" }}><TText text={s.kicker} /></span>
-      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 24 : "clamp(24px,2.1vw,32px)", lineHeight:.95, letterSpacing:"0.02em", color:hov?T.goldL:T.white, marginBottom:12, transition:"color .35s", position:"relative" }}><TText text={s.title} /></h3>
-      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: nb ? 15 : 16, fontWeight:300, color:T.muted, lineHeight:1.6, marginBottom:18, flex:1, position:"relative" }}><TText text={s.desc} /></p>
+      <h3 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: mobile ? 28 : nb ? 24 : "clamp(24px,2.1vw,32px)", lineHeight:.95, letterSpacing:"0.02em", color:hov?T.goldL:T.white, marginBottom:12, transition:"color .35s", position:"relative" }}><TText text={s.title} /></h3>
+      <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize: mobile ? 16 : nb ? 15 : 16, fontWeight:300, color:T.muted, lineHeight:1.6, marginBottom:18, flex:1, position:"relative" }}><TText text={s.desc} /></p>
 
       <div style={{ display:"flex", gap:6, flexWrap:"wrap", position:"relative" }}>
         {tags.map(tag => (
@@ -1715,39 +1719,40 @@ function ServiceCard({ s, tags, idx, animP, leaveP }) {
  * mostra as 3 frentes de atuação, o processo em 3 etapas e o CTA de orçamento via WhatsApp.
  * @param {number} p - Progresso geral (0 a 1) vindo do BioSection.
  */
-function PanelServicos({ p }) {
+function PanelServicos({ p, mobile = false }) {
   const nb = useNotebook();
   const { t: tx } = useLang();
-  const enterT = stageT(p, STAGES.servicos);
-  const leaveT = stageT(p, STAGES.contatos);
+  const enterT = mobile ? 1 : stageT(p, STAGES.servicos);
+  const leaveT = mobile ? 0 : stageT(p, STAGES.contatos);
 
   const eIn = enterT * enterT * enterT;
   const eOut = leaveT * leaveT * leaveT;
   const sv = tx.services;
 
   return (
-    <div data-panel="servicos" style={{ position:"absolute", inset:0, background:T.black, padding: nb ? "68px 32px 24px" : "100px 48px 60px", overflowY:"auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath:`circle(${eIn * 150}% at 0% 50%)`, zIndex:45, display:"flex", alignItems:"center" }}>
+    <div data-panel="servicos" style={{ position: mobile ? "relative" : "absolute", inset: mobile ? undefined : 0, background:T.black, padding: mobile ? "72px 20px" : nb ? "68px 32px 24px" : "100px 48px 60px", overflowY: mobile ? "visible" : "auto", pointerEvents: enterT > 0.5 && leaveT < 0.5 ? "auto" : "none", opacity: eIn > 0 ? 1 : 0, clipPath: mobile ? "none" : `circle(${eIn * 150}% at 0% 50%)`, zIndex:45, display:"flex", alignItems:"center" }}>
       <div style={{ maxWidth:1240, width:"100%", margin:"auto" }}>
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom: nb ? 24 : 48, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, ${(1 - eIn) * 30 - eOut * 80}px) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom: mobile ? 36 : nb ? 24 : 48, flexWrap:"wrap", gap:24, transform:`translate(${-eOut * 300}px, ${(1 - eIn) * 30 - eOut * 80}px) rotate(${-eOut * 6}deg)`, opacity: Math.max(0, 1 - eOut * 1.5) }}>
           <div>
             <SecLabel num="05" label={sv.label} />
-            {/* No notebook o título fica numa linha só para o painel caber em telas de ~768px de altura */}
-            <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? "clamp(40px,4.4vw,60px)" : "clamp(48px,7vw,80px)", lineHeight:.9, color:T.white, marginTop: nb ? -16 : 0 }}>
-              <TText text={sv.title[0]} />{nb ? " " : <br />}<span className="gold-text"><TText text={sv.title[1]} /></span>
+            <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: mobile ? "clamp(44px,13vw,64px)" : nb ? "clamp(40px,4.4vw,60px)" : "clamp(48px,7vw,80px)", lineHeight: 1.05, color:T.white, marginTop: nb && !mobile ? -10 : 0 }}>
+              <TText text={sv.title[0]} /><br /><span className="gold-text" style={{ display: "inline-block", marginTop: 6 }}><TText text={sv.title[1]} /></span>
             </h2>
           </div>
           <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:16, fontStyle:"italic", color:T.muted, maxWidth:300, lineHeight:1.7, opacity: enterT * Math.max(0, 1 - eOut) }}><TText text={sv.note} /></p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap: nb ? 14 : 24 }}>
-          {sv.items.map((s, i) => <ServiceCard key={i} s={s} tags={SERVICE_TAGS[i]} idx={i} animP={eIn} leaveP={eOut} />)}
+        <div style={{ display:"grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3,1fr)", gap: mobile ? 12 : nb ? 14 : 24 }}>
+          {sv.items.map((s, i) => mobile
+            ? <Reveal key={i}><ServiceCard s={s} tags={SERVICE_TAGS[i]} idx={i} animP={1} leaveP={0} mobile /></Reveal>
+            : <ServiceCard key={i} s={s} tags={SERVICE_TAGS[i]} idx={i} animP={eIn} leaveP={eOut} />)}
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap: nb ? 32 : 56, alignItems:"center", marginTop: nb ? 20 : 44, paddingTop: nb ? 18 : 32, borderTop:`1px solid ${T.border}`, transform:`translate(${eOut * 300}px, ${(1 - eIn) * 60 + eOut * 80}px)`, opacity: Math.max(0, eIn * 1.2 - 0.2) * Math.max(0, 1 - eOut * 1.5) }}>
+        <div style={{ display:"grid", gridTemplateColumns: mobile ? "1fr" : "1fr auto", gap: mobile ? 36 : nb ? 32 : 56, alignItems:"center", marginTop: mobile ? 44 : nb ? 20 : 44, paddingTop: mobile ? 32 : nb ? 18 : 32, borderTop:`1px solid ${T.border}`, transform:`translate(${eOut * 300}px, ${(1 - eIn) * 60 + eOut * 80}px)`, opacity: Math.max(0, eIn * 1.2 - 0.2) * Math.max(0, 1 - eOut * 1.5) }}>
           <div>
             <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9, letterSpacing:"0.4em", color:T.muted, textTransform:"uppercase" }}><TText text={sv.processLabel} /></span>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap: nb ? 20 : 32, marginTop:16 }}>
+            <div style={{ display:"grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3,1fr)", gap: mobile ? 22 : nb ? 20 : 32, marginTop: mobile ? 20 : 16 }}>
               {sv.steps.map((step, i) => (
                 <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
                   <span className="gold-text" style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize: nb ? 30 : 36, lineHeight:1 }}>{String(i + 1).padStart(2, "0")}</span>
@@ -1784,6 +1789,7 @@ function BioSection() {
   const currentP = useRef(0);
   const containerRef = useRef(null);
   const { t: tx } = useLang();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     let af;
@@ -1817,6 +1823,24 @@ function BioSection() {
     onScroll();
     return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(af); };
   }, []);
+
+  // MOBILE: sem esteira de 3100vh nem clipping de círculos. Seções empilhadas em rolagem vertical natural;
+  // Skills e Contact usam o modo não-cinemático (sem `p`), já animado por useInView.
+  if (isMobile) {
+    return (
+      <>
+        <SDivider />
+        <div id="bio">
+          <Reveal><PanelSobre p={0} mobile /></Reveal>
+          <div id="trajetoria"><PanelCarreira p={0} mobile /></div>
+          <div id="projetos"><PanelProjetos p={0} mobile /></div>
+          <Skills />
+          <div id="servicos"><PanelServicos p={0} mobile /></div>
+          <Contact />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -1867,6 +1891,7 @@ const SKILLS = [
  */
 function Skills({ p }) {
   const nb = useNotebook();
+  const isMobile = useIsMobile();
   const { t: tx } = useLang();
   const isCin = p !== undefined;
   // LÓGICA DE TEMPO IDÊNTICA
@@ -2034,7 +2059,7 @@ function Skills({ p }) {
   }, [lVis]);
 
   const content = (
-    <section id="skills" data-panel="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? (nb ? "0 28px" : "0 48px") : (nb ? "100px 32px" : "140px 48px"), background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
+    <section id="skills" data-panel="skills" ref={containerRefF} style={{ position: "relative", padding: isCin ? (nb ? "0 28px" : "0 48px") : isMobile ? "80px 20px" : (nb ? "100px 32px" : "140px 48px"), background:T.dark, overflow: "hidden", display: isCin ? "flex" : "block", flexDirection: "column", justifyContent: "center", height: isCin ? "100vh" : "auto", minHeight: "100vh", width: "100%" }}>
       {/* Logos com física via ref (saem da animação CSS) */}
       <div style={{ position: "absolute", inset: 0, opacity: Math.max(0, 1 - eOut), transform: `scale(${1 - eOut*0.3})`, pointerEvents: "none" }}>
         {LOGO_DEFS.map((logo, i) => (
@@ -2066,7 +2091,7 @@ function Skills({ p }) {
           </div>
         ))}
       </div>
-      <div style={{ position: "relative", zIndex: 10, maxWidth:1060, width: "100%", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap: nb ? 44 : 80, alignItems:"start" }}>
+      <div style={{ position: "relative", zIndex: 10, maxWidth:1060, width: "100%", margin:"0 auto", display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 40 : nb ? 44 : 80, alignItems:"start" }}>
         <div style={{ transform: `translate(${-eOut * 300}px, ${-eOut * 100}px) rotate(${-eOut * 15}deg)`, opacity: Math.max(0, 1 - eOut) }}>
           <div ref={lRef} style={{ opacity:lVis?1:0, transform:lVis?"translateX(0)":"translateX(-40px)", transition:"all .9s .1s cubic-bezier(.16,1,.3,1)" }}>
             <SecLabel num="04" label={tx.skills.label} />
@@ -2082,7 +2107,7 @@ function Skills({ p }) {
           </div>
         </div>
         <div style={{ transform: `translate(${eOut * 300}px, ${eOut * 150}px) rotate(${eOut * 10}deg)`, opacity: Math.max(0, 1 - eOut) }}>
-          <div ref={rRef} style={{ paddingTop:60 }}>
+          <div ref={rRef} style={{ paddingTop: isMobile ? 0 : 60 }}>
             {SKILLS.map((s,i)=>(
               <div key={i} style={{ marginBottom:28, opacity:rVis?1:0, transform:rVis?"translateX(0)":"translateX(32px)", transition:`all .75s ${.1+i*.1}s cubic-bezier(.16,1,.3,1)` }}>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
@@ -2126,6 +2151,7 @@ function Skills({ p }) {
  */
 function Contact({ p }) {
   const nb = useNotebook();
+  const isMobile = useIsMobile();
   const { t: tx } = useLang();
   const isCin = p !== undefined;
   // LÓGICA DE TEMPO IDÊNTICA
@@ -2142,9 +2168,9 @@ function Contact({ p }) {
   ].map((link, i) => ({ ...link, desc: tx.contact.links[i] }));
 
   const content = (
-    <section id="contatos" data-panel="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? (nb ? "36px 28px" : "60px 48px") : (nb ? "80px 32px 72px" : "120px 48px 100px"), background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
+    <section id="contatos" data-panel="contatos" className="contato-section" ref={ref} style={{ padding: isCin ? (nb ? "36px 28px" : "60px 48px") : isMobile ? "80px 20px 72px" : (nb ? "80px 32px 72px" : "120px 48px 100px"), background:T.dark, height: isCin ? "100vh" : "auto", minHeight:"80vh", display:"flex", flexDirection:"column", justifyContent:"center", width: "100%", overflowY:"auto" }}>
       <div style={{ maxWidth:1060, width:"100%", margin:"0 auto", opacity: isCin ? enterT : 1, flexShrink: 0 }}>
-        <div style={{ textAlign: "center", marginBottom: 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
+        <div style={{ textAlign: "center", marginBottom: isMobile ? 40 : 60, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .2s cubic-bezier(.16,1,.3,1)" }}>
           <SecLabel num="06" label={tx.contact.label} />
           <h2 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:"clamp(44px,6vw,68px)", lineHeight:.9, color:T.white, marginTop:24 }}>
             <TText text={tx.contact.title[0]} /> <span className="gold-text"><TText text={tx.contact.title[1]} /></span>
@@ -2154,7 +2180,7 @@ function Contact({ p }) {
           </p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:24, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .4s cubic-bezier(.16,1,.3,1)" }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(280px, 1fr))", gap: isMobile ? 12 : 24, opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(40px)", transition:"all .9s .4s cubic-bezier(.16,1,.3,1)" }}>
           {links.map((link, i) => (
             <a 
               key={i} 
@@ -2163,7 +2189,7 @@ function Contact({ p }) {
               rel="noreferrer" 
               data-h 
               style={{
-                display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", padding:"48px 32px",
+                display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", padding: isMobile ? "32px 22px" : "48px 32px",
                 border:`1px solid ${T.border}`, background:T.card, textDecoration:"none", transition:"all .4s ease", cursor:"none", position:"relative", overflow:"hidden"
               }}
               onMouseEnter={(e) => {
@@ -2212,10 +2238,11 @@ function Contact({ p }) {
  */
 function Footer() {
   const { t: tx } = useLang();
+  const isMobile = useIsMobile();
   return (
     <>
       <SDivider />
-      <footer data-panel="footer" style={{ padding:"36px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", background:T.black, flexWrap:"wrap", gap:16 }}>
+      <footer data-panel="footer" style={{ padding: isMobile ? "32px 20px" : "36px 48px", display:"flex", flexDirection: isMobile ? "column" : "row", justifyContent:"space-between", alignItems:"center", textAlign: isMobile ? "center" : undefined, background:T.black, flexWrap:"wrap", gap:16 }}>
         <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:18, letterSpacing:"0.12em" }}>
           <span className="gold-text">Davi</span><span style={{color:T.muted}}>freitas</span>
         </span>
