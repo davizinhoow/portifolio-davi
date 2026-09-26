@@ -1582,7 +1582,7 @@ function ProjectCard({ p, idx, animP = 1, leaveP = 0, mobile = false }) {
     <div data-h 
       onMouseEnter={()=>setHov(true)} 
       onMouseLeave={()=>setHov(false)}
-      onClick={() => { if(p.link && p.link !== "#") window.open(p.link, "_blank"); }}
+      onClick={() => { if(p.link && p.link !== "#") window.open(p.link, "_blank", "noopener,noreferrer"); }}
       style={{ gridColumn: mobile ? "span 1" : p.large?"span 2":"span 1", padding: mobile ? "30px 22px" : p.large?"52px":"40px", border:`1px solid ${hov?T.gold:T.border}`, background:hov?`${T.goldD}0e`:T.card, cursor:p.link && p.link !== "#"?"pointer":"default", position:"relative", overflow:"hidden", transition:"border-color .4s,background .4s", opacity, transform }}>
       <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:`linear-gradient(90deg,transparent,${hov?T.gold:T.goldD}55,transparent)`, transformOrigin:"left", transform:hov?"scaleX(1)":"scaleX(.3)", transition:"transform .55s" }} />
       <div style={{ position:"absolute", inset:0, opacity:hov?1:0, background:`radial-gradient(ellipse 60% 60% at 25% 40%,${T.goldD}10,transparent)`, transition:"opacity .6s", pointerEvents:"none" }} />
