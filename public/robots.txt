@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://portifolio-davi.vercel.app/sitemap.xml
